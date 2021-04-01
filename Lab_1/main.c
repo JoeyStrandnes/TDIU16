@@ -19,21 +19,29 @@ int main(int argc, char** argv){
     //printf("%li\n", sizeof(*argv[1]));
 
     for (int i = 0; i < argc; i++) {
+      /*
       char* ptr = argv[i];
       printf("%s",ptr);
       printf(" %p",ptr);
       printf(" %p",argv[i]);
       printf(" %li", sizeof(*(ptr)));
       printf(" %li \n", sizeof(*(argv[i])));
+      */
+      int iterator = 0;
+      while(argv[i][iterator] != '\0')
+      {
+        printf("%c", argv[i][iterator]);
+        iterator++;
+      }
+      printf("%6d", iterator);
+/*
       for(unsigned int k = 0; k < sizeof(*ptr); k++){
         printf("%d ", k);
         printf("%c", (argv[i][k]));
 
         counter++;
       }
-
-      printf("    %d\n", counter);
-      counter = 0;
+*/
     }
   }
 
