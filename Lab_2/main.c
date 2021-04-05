@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "map.h"
+
 
 /* Recommended compile commmand:
  *
@@ -12,7 +14,7 @@
  *
  * valgrind --tool=memcheck ./a.out
  */
-#error Read comments above, then remove this line.
+//#error Read comments above, then remove this line.
 
 
 /* Can be used to inform compiler about unused parameters (prevent
@@ -25,6 +27,10 @@
 /* function passed as parameter to map_remove_if in order to free the
  * memory for all inseted values, and return true to remove them from
  * the map */
+
+
+
+
 bool do_free(key_t k UNUSED, value_t v, int aux UNUSED)
 {
   free(v);     /*! free memory */
@@ -44,7 +50,7 @@ void print_less(key_t k UNUSED, value_t v, int aux)
 }
 
 
-#define LOOPS 10
+#define LOOPS 5
 
 char* my_strdup(char* str)
 {
@@ -91,15 +97,19 @@ int main()
     obj = map_find(&container, id);
 
     /*! if it was found, display it */
-YOUR CODE
+    printf("value: %s \n", obj);
 
     /* since we leave the value in the map we may use it again and
      * should not free the memory */
   }
 
+
+
   /* remember to test with invalid keys (like 4711, or -1) */
   for ( i = 0; i < LOOPS; ++i)
   {
+
+    printf("\n Elements: %d \n", container.elem_counter);
     printf("Enter id to remove value for: ");
     scanf("%d", &id);
 
@@ -107,18 +117,19 @@ YOUR CODE
     obj = map_remove(&container, id);
 
     /*! if it was found, display it */
-YOUR CODE
+    printf("value: %s \n", obj);
     /* since we removed the value from the map we will never use it again and
      * must properly free the memory (if it was allocated) */
   }
 
   /*! print all strings representing an integer less than N */
+  /*
   printf("Will now display all values less than N. Choose N: ");
   scanf("%d", &i);
   map_for_each(&container, print_less, i);
-
+  */
   /*! free all remaining memory and remove from map */
-  map_remove_if(&container, do_free, 0);
+  //map_remove_if(&container, do_free, 0);
 
   return 0;
 }
