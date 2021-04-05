@@ -4,47 +4,39 @@
 
 int main(int argc, char** argv){
 
-  int counter = 0;
-/*
-  int temp[] = {69,2,3,4};
-  int* ptr = temp;
 
-  printf("%li \n", sizeof(*(ptr)));
-*/
+  int total = 0;
+  int maxWord = 20;
+  int spacing = 0;
+
   if (argc > 20) {
     printf("%s\n", "Matat in för många");
   }
 
   else{
-    //printf("%li\n", sizeof(*argv[1]));
 
     for (int i = 0; i < argc; i++) {
-      /*
-      char* ptr = argv[i];
-      printf("%s",ptr);
-      printf(" %p",ptr);
-      printf(" %p",argv[i]);
-      printf(" %li", sizeof(*(ptr)));
-      printf(" %li \n", sizeof(*(argv[i])));
-      */
+
       int iterator = 0;
-      while(argv[i][iterator] != '\0')
-      {
+      while(argv[i][iterator] != '\0'){
+
         printf("%c", argv[i][iterator]);
         iterator++;
       }
-      printf("%6d", iterator);
-/*
-      for(unsigned int k = 0; k < sizeof(*ptr); k++){
-        printf("%d ", k);
-        printf("%c", (argv[i][k]));
+      total += iterator;
 
-        counter++;
+      if (spacing < iterator){
+
+        spacing = maxWord-iterator;
       }
-*/
+
+      printf("%*.d\n", maxWord-iterator,iterator);
+
     }
   }
 
+  printf("Total length %*.d\n", (spacing-6),total);
+  printf("Average length %*.2f\n", (spacing-8), (total/(float)argc));
 
   return 0;
 
