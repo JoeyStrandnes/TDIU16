@@ -6,33 +6,27 @@ int main(int argc, char** argv){
 
 
   int total = 0;
-  int maxWord = 20;
+  int maxWord = 30;
   int spacing = 0;
 
-  if (argc > 20) {
-    printf("%s\n", "Matat in för många");
-  }
-
-  else{
-
-    for (int i = 0; i < argc; i++) {
-
-      int iterator = 0;
-      while(argv[i][iterator] != '\0'){
-
-        printf("%c", argv[i][iterator]);
-        iterator++;
-      }
-      total += iterator;
-
-      if (spacing < iterator){
-
-        spacing = maxWord-iterator;
-      }
-
-      printf("%*.d\n", maxWord-iterator,iterator);
-
+  for (int i = 0; i < argc; i++)
+  {
+    int iterator = 0;
+    while(argv[i][iterator] != '\0' && iterator < 20)
+    {
+      printf("%c", argv[i][iterator]);
+      iterator++;
     }
+
+    total += iterator;
+
+    if (spacing < iterator)
+    {
+      spacing = maxWord-iterator;
+    }
+
+    printf("%*.d\n", maxWord-iterator,iterator);
+
   }
 
   printf("Total length %*.d\n", (spacing-6),total);
