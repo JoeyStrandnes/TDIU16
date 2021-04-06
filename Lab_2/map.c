@@ -29,7 +29,7 @@ key_t map_insert(struct map* object_pointer, value_t val)
 
   temp_ptr->key = object_pointer->elem_counter;
   temp_ptr->value = val;
-
+  temp_ptr->next = NULL;
 
 
   return temp_ptr->key;
@@ -39,7 +39,7 @@ key_t map_insert(struct map* object_pointer, value_t val)
 
 value_t map_find(struct map* object_pointer, key_t k)
 {
-  if(k > object_pointer->elem_counter)
+  if(k > object_pointer->elem_counter ||  k < 1)
   {
     //PANIC("Key not found");
     //bad
@@ -72,33 +72,62 @@ value_t map_remove(struct map* object_pointer, key_t k)
   value_t temp_val;
 
   //find element to removed
-  for(int i = object_pointer->last_entry_pointer->key;i > k;i--)
+  while(temp_ptr->key != k && k <= object_pointer->elem_counter && k > 0)
   {
     temp_ptr->key--;
     temp_ptr = temp_ptr->previous;
+
   }
+
   //removal preparation
   temp_previous_ptr = temp_ptr->previous;
   temp_next_ptr = temp_ptr->next;
   temp_val = temp_ptr->value;
   object_pointer->elem_counter--;
 
-  //remove
-  free(temp_ptr);
-
   //patching up the chain
-  if(k-1 != object_pointer->elem_counter)
+  if(k > 0 && object_pointer->elem_counter > 0)
   {
     temp_next_ptr->previous = temp_previous_ptr;
     temp_previous_ptr->next = temp_next_ptr;
   }
-  else
+  else if( object_pointer->elem_counter == 0  || temp_ptr->next == NULL)
   {
     temp_previous_ptr->next = NULL;
   }
+  else
+  {
+    printf("%s\n", "ERROR");
+    return '\0';
+  }
 
-
+  //remove
+  free(temp_ptr);
 
   //return
   return temp_val;
+}
+
+
+
+void map_deinit(struct map* object_pointer)
+{
+  printf("%s\n", "Destrutor >:(");
+
+  struct list *temp_ptr  = object_pointer->last_entry_pointer;
+  struct list *temp_previous_ptr;
+
+
+  while(temp_ptr != object_pointer->first_entry_pointer)
+  {
+    printf("%s\n", temp_ptr->value);
+
+    temp_previous_ptr = temp_ptr->previous;
+    free(temp_ptr);
+    temp_ptr = temp_previous_ptr;
+  }
+
+  free(object_pointer->first_entry_pointer);
+
+
 }

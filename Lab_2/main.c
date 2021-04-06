@@ -105,7 +105,7 @@ int main()
 
 
 
-  /* remember to test with invalid keys (like 4711, or -1) */
+  // remember to test with invalid keys (like 4711, or -1)
   for ( i = 0; i < LOOPS; ++i)
   {
 
@@ -113,13 +113,13 @@ int main()
     printf("Enter id to remove value for: ");
     scanf("%d", &id);
 
-    /*! find and remove a value for a key in the map */
+    //! find and remove a value for a key in the map
     obj = map_remove(&container, id);
 
-    /*! if it was found, display it */
+    //! if it was found, display it
     printf("value: %s \n", obj);
-    /* since we removed the value from the map we will never use it again and
-     * must properly free the memory (if it was allocated) */
+    // since we removed the value from the map we will never use it again and
+    // must properly free the memory (if it was allocated)
   }
 
   /*! print all strings representing an integer less than N */
@@ -130,6 +130,10 @@ int main()
   */
   /*! free all remaining memory and remove from map */
   //map_remove_if(&container, do_free, 0);
+
+  map_deinit(&container);
+
+  printf("%s\n", "Death to Linus");
 
   return 0;
 }

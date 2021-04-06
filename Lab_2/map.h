@@ -25,7 +25,7 @@ struct map
 };
 
 
-
+void map_deinit(struct map* object_pointer);
 
 void map_init(struct map* object_pointer);
 
