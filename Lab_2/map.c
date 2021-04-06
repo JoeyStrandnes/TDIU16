@@ -91,9 +91,13 @@ value_t map_remove(struct map* object_pointer, key_t k)
     temp_next_ptr->previous = temp_previous_ptr;
     temp_previous_ptr->next = temp_next_ptr;
   }
-  else if( object_pointer->elem_counter == 0  || temp_ptr->next == NULL)
+  else if(temp_ptr->next == NULL)
   {
     temp_previous_ptr->next = NULL;
+  }
+  else if(object_pointer->elem_counter == 1)
+  {
+    temp_previous_ptr->previous = object_pointer->first_entry_pointer;
   }
   else
   {
@@ -120,9 +124,11 @@ void map_deinit(struct map* object_pointer)
 
   while(temp_ptr != object_pointer->first_entry_pointer)
   {
-    printf("%s\n", temp_ptr->value);
+    //printf("%s\n", temp_ptr->value);
+
 
     temp_previous_ptr = temp_ptr->previous;
+    //printf("%s\n", temp_previous_ptr->value);
     free(temp_ptr);
     temp_ptr = temp_previous_ptr;
   }

@@ -87,6 +87,8 @@ int main()
     id = map_insert(&container, obj);
   }
 
+
+
   /* remember to test with invalid keys (like 4711, or -1) */
   for ( i = 0; i < LOOPS; ++i)
   {
@@ -109,7 +111,7 @@ int main()
   for ( i = 0; i < LOOPS; ++i)
   {
 
-    printf("\n Elements: %d \n", container.elem_counter);
+    printf("\nElements: %d \n", container.elem_counter);
     printf("Enter id to remove value for: ");
     scanf("%d", &id);
 
@@ -118,6 +120,7 @@ int main()
 
     //! if it was found, display it
     printf("value: %s \n", obj);
+    free(obj);
     // since we removed the value from the map we will never use it again and
     // must properly free the memory (if it was allocated)
   }
@@ -130,6 +133,8 @@ int main()
   */
   /*! free all remaining memory and remove from map */
   //map_remove_if(&container, do_free, 0);
+
+
 
   map_deinit(&container);
 
