@@ -63,7 +63,7 @@ value_t map_remove(struct map* object_pointer, key_t k)
   {
     //PANIC("Key not found");
     //bad
-    return '\0'; //NULL
+    return NULL; //NULL
   }
 
   struct list* temp_ptr = object_pointer->last_entry_pointer;
@@ -91,18 +91,20 @@ value_t map_remove(struct map* object_pointer, key_t k)
     temp_next_ptr->previous = temp_previous_ptr;
     temp_previous_ptr->next = temp_next_ptr;
   }
+  else if(object_pointer->elem_counter == 0)
+  {
+    temp_previous_ptr->previous = object_pointer->first_entry_pointer;
+    object_pointer->last_entry_pointer = object_pointer->first_entry_pointer;
+  }
   else if(temp_ptr->next == NULL)
   {
     temp_previous_ptr->next = NULL;
-  }
-  else if(object_pointer->elem_counter == 1)
-  {
-    temp_previous_ptr->previous = object_pointer->first_entry_pointer;
+    object_pointer->last_entry_pointer = temp_previous_ptr;
   }
   else
   {
     printf("%s\n", "ERROR");
-    return '\0';
+    return NULL;
   }
 
   //remove

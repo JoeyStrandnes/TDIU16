@@ -120,7 +120,10 @@ int main()
 
     //! if it was found, display it
     printf("value: %s \n", obj);
-    free(obj);
+    if(obj != NULL)
+    {
+      free(obj);
+    }
     // since we removed the value from the map we will never use it again and
     // must properly free the memory (if it was allocated)
   }
