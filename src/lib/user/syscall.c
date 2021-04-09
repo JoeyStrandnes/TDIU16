@@ -1,5 +1,8 @@
 #include <syscall.h>
 #include "../syscall-nr.h"
+#include "../threads/init.h"
+#include "../threads/thread.h"
+//#include "../kernel/list.h"
 
 /* Invokes syscall NUMBER, passing no arguments, and returns the
    return value as an `int'. */
@@ -62,7 +65,7 @@
         })
 
 void
-halt (void) 
+halt (void)
 {
   syscall0 (SYS_HALT);
   NOT_REACHED ();
@@ -106,7 +109,7 @@ open (const char *file)
 }
 
 int
-filesize (int fd) 
+filesize (int fd)
 {
   return syscall1 (SYS_FILESIZE, fd);
 }
@@ -124,13 +127,13 @@ write (int fd, const void *buffer, unsigned size)
 }
 
 void
-seek (int fd, unsigned position) 
+seek (int fd, unsigned position)
 {
   syscall2 (SYS_SEEK, fd, position);
 }
 
 unsigned
-tell (int fd) 
+tell (int fd)
 {
   return syscall1 (SYS_TELL, fd);
 }
@@ -166,20 +169,19 @@ mkdir (const char *dir)
 }
 
 bool
-readdir (int fd, char name[READDIR_MAX_LEN + 1]) 
+readdir (int fd, char name[READDIR_MAX_LEN + 1])
 {
   return syscall2 (SYS_READDIR, fd, name);
 }
 
 bool
-isdir (int fd) 
+isdir (int fd)
 {
   return syscall1 (SYS_ISDIR, fd);
 }
 
 int
-inumber (int fd) 
+inumber (int fd)
 {
   return syscall1 (SYS_INUMBER, fd);
 }
-
