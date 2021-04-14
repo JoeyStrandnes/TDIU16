@@ -50,9 +50,10 @@ static void sys_halt(void)
   power_off();
 }
 
-static void sys_exit(void)
+static void sys_exit(int status)
 {
     printf("System Call Exit\n");
+    printf("Status: %d\n", status);
     thread_exit();
 }
 
@@ -63,7 +64,15 @@ syscall_handler (struct intr_frame *f)
 {
   int32_t* esp = (int32_t*)f->esp;
 
-  switch ( 0 /* retrive syscall number */ )
+  printf ("Stack top + 0: %d\n", esp[0]);
+  printf ("Stack top + 1: %d\n", esp[1]);
+  printf ("Stack top + 2: %d\n", esp[2]);
+  printf ("Stack top + 3: %d\n", esp[3]);
+  printf ("Stack top + 4: %d\n", esp[4]);
+  printf ("Stack top + 5: %d\n", esp[5]);
+
+
+  switch ( esp[0] /* retrive syscall number */ )
   {
     case SYS_HALT:
     {
@@ -72,7 +81,7 @@ syscall_handler (struct intr_frame *f)
     }
     case SYS_EXIT:
     {
-      sys_exit();
+      sys_exit(esp[1]);
       break;
     }
     default:
@@ -82,7 +91,7 @@ syscall_handler (struct intr_frame *f)
       printf ("Stack top + 0: %d\n", esp[0]);
       printf ("Stack top + 1: %d\n", esp[1]);
 
-      thread_exit ():
+      thread_exit ();
     }
   }
 }
