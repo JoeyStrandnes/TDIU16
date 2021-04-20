@@ -58,19 +58,76 @@ static void sys_exit(int status)
 }
 
 
+static int sys_write(int fd, char *buffer, unsigned size){
+
+  printf("System Call Write\n");
+
+  if(fd == STDOUT_FILENO) // Till skärmen
+  {
+    putbuf(buffer, size); //putbuf(const char *buffer, size_t n);
+    return 1;
+  }
+  else if (fd == STDIN_FILENO) //Från tangentbordet
+  {
+    return -1;
+  }
+
+  return -1;
+}
+
+
+static int sys_read(int fd, char *buffer, unsigned size){
+
+  //printf("System Call Read\n");
+
+  if(fd == STDOUT_FILENO) // Till skärmen
+  {
+    return -1;
+  } // STDOUT_FILENO - END
+
+  else if (fd == STDIN_FILENO) //Från tangentbordet
+  {
+    unsigned counter = 0;
+    while(size != 0 && counter < size)
+    {
+      *buffer = input_getc(); //Get char
+
+      //Input massaging
+      if(*buffer == '\r') //Check for carraige-return conversion
+      {
+        *buffer = '\n';
+      }
+
+      else if((*buffer == 127) && (counter > 0)) //Backspace
+      {
+        *(--buffer) = 0;
+        putbuf("\b \b", 3);
+      }
+
+      counter++;
+      putchar(*buffer);
+
+    }
+
+    return counter;
+
+  }//STDOUT_FILENO - END
+
+  return -1; //Catch error
+}
 
 static void
 syscall_handler (struct intr_frame *f)
 {
   int32_t* esp = (int32_t*)f->esp;
-
+/*
   printf ("Stack top + 0: %d\n", esp[0]);
   printf ("Stack top + 1: %d\n", esp[1]);
   printf ("Stack top + 2: %d\n", esp[2]);
   printf ("Stack top + 3: %d\n", esp[3]);
   printf ("Stack top + 4: %d\n", esp[4]);
   printf ("Stack top + 5: %d\n", esp[5]);
-
+*/
 
   switch ( esp[0] /* retrive syscall number */ )
   {
@@ -84,6 +141,17 @@ syscall_handler (struct intr_frame *f)
       sys_exit(esp[1]);
       break;
     }
+    case SYS_WRITE:
+    {
+      f->eax = sys_write(esp[1],(char*)esp[2],esp[3]);
+      break;
+    }
+    case SYS_READ:
+    {
+      f->eax = sys_read(esp[1],(char*)esp[2],esp[3]);
+      break;
+    }
+
     default:
     {
       printf ("Executed an unknown system call!\n");
