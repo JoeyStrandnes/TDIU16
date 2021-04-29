@@ -58,15 +58,32 @@ static void sys_exit(int status)
 }
 
 
-static int sys_write(int fd, char *buffer, unsigned size){
+static int sys_write(int fd, char *buffer, unsigned size)
+{
 
-  printf("System Call Write\n");
+  //printf("System Call Write\n");
+
 
   if(fd == STDOUT_FILENO) // Till skärmen
   {
     putbuf(buffer, size); //putbuf(const char *buffer, size_t n);
-    return 1;
+    return size;
   }
+
+  if(fd > STDOUT_FILENO)
+  {
+    struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+    if(file_ptr == NULL)
+    {
+      return -1;
+    }
+
+    return file_write(file_ptr, buffer, size);
+
+
+  }
+
+
   else if (fd == STDIN_FILENO) //Från tangentbordet
   {
     return -1;
@@ -75,8 +92,8 @@ static int sys_write(int fd, char *buffer, unsigned size){
   return -1;
 }
 
-
-static int sys_read(int fd, char *buffer, unsigned size){
+static int sys_read(int fd, char *buffer, unsigned size)
+{
 
   //printf("System Call Read\n");
 
@@ -84,6 +101,21 @@ static int sys_read(int fd, char *buffer, unsigned size){
   {
     return -1;
   } // STDOUT_FILENO - END
+
+  if(fd > STDOUT_FILENO)
+  {
+    struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+    if(file_ptr == NULL)
+    {
+      return -1;
+    }
+
+    return file_read(file_ptr, buffer, size);
+
+
+  }
+
+
 
   else if (fd == STDIN_FILENO) //Från tangentbordet
   {
@@ -105,7 +137,7 @@ static int sys_read(int fd, char *buffer, unsigned size){
       }
 
       counter++;
-      putchar(*buffer);
+      putchar(*buffer++);
 
     }
 
@@ -116,8 +148,99 @@ static int sys_read(int fd, char *buffer, unsigned size){
   return -1; //Catch error
 }
 
-static void
-syscall_handler (struct intr_frame *f)
+static int sys_open(const char *file)
+{
+
+  struct file* file_ptr = filesys_open(file);
+
+  if(file_ptr == NULL){
+      return -1;
+  }
+
+  int temp =  map_insert(&(thread_current()->File_Map), file_ptr);
+
+  printf("Map insert status %d\n", temp);
+  return temp;
+
+}
+
+static bool sys_create(const char *file, unsigned initial_size)
+{
+
+
+  return filesys_create(file, initial_size);
+
+
+}
+
+static void sys_close(int fd)
+{
+
+  struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+
+
+  if(file_ptr != NULL)
+  {
+    file_close(file_ptr);
+    map_remove(&(thread_current()->File_Map), fd);
+  }
+
+
+}
+
+static bool sys_remove(const char *file)
+{
+
+  return filesys_remove(file);
+
+}
+
+
+static int sys_tell(int fd)
+{
+
+  struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+
+  if(file_ptr != NULL)
+  {
+
+    return file_tell(file_ptr);
+
+  }
+
+  return -1;
+
+}
+
+static void sys_seek(int fd, unsigned pos)
+{
+
+  struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+
+
+  if(file_ptr != NULL)
+  {
+    file_seek(file_ptr, pos);
+  }
+
+}
+
+static int sys_filesize(int fd)
+{
+
+  struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+
+
+  if(file_ptr != NULL)
+  {
+    return file_length(file_ptr);
+  }
+  return -1;
+
+}
+
+
+static void syscall_handler (struct intr_frame *f)
 {
   int32_t* esp = (int32_t*)f->esp;
 /*
@@ -151,6 +274,42 @@ syscall_handler (struct intr_frame *f)
       f->eax = sys_read(esp[1],(char*)esp[2],esp[3]);
       break;
     }
+    case SYS_OPEN:
+    {
+      f->eax = sys_open((const char*)esp[1]);
+      break;
+    }
+    case SYS_CLOSE:
+    {
+      sys_close(esp[1]);
+      break;
+    }
+    case SYS_REMOVE:
+    {
+      f->eax = sys_remove((const char *)esp[1]);
+      break;
+    }
+    case SYS_CREATE:
+    {
+      f->eax = sys_create((const char*)(esp[1]), (unsigned)(esp[2]));
+      break;
+    }
+    case SYS_SEEK:
+    {
+      sys_seek(esp[1], (unsigned)esp[2]);
+      break;
+    }
+    case SYS_TELL:
+    {
+      f->eax = sys_tell(esp[1]);
+      break;
+    }
+    case SYS_FILESIZE:
+    {
+      f->eax = sys_filesize(esp[1]);
+      break;
+    }
+
 
     default:
     {

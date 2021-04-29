@@ -67,6 +67,7 @@ static void schedule (void);
 void schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+
 /* Initializes the threading system (not individual threads!) by
    transforming the code that's currently running into a thread.
    This can't work in general and it is possible in this case only
@@ -88,6 +89,7 @@ thread_init (void)
 
   lock_init (&tid_lock);
   list_init (&ready_list);
+
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -115,6 +117,10 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   /* YES! You may want add stuff here. */
+  //Init file map
+  //printf("String Comp %d \n", strcmp(name, "main"));
+
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -224,6 +230,7 @@ thread_create (const char *name, int priority,
   DEBUG_thread_count_up();
   thread_unblock (t);
 
+
   debug("%s#%d: thread_create(\"%s\", ...) RETURNS %d\n",
         thread_current()->name,
         thread_current()->tid,
@@ -309,6 +316,12 @@ thread_exit (void)
 {
   ASSERT (!intr_context ());
   DEBUG_thread_count_down();
+
+  //User defined features
+  if(thread_current()->priority != PRI_DEFAULT){
+    map_deinit(&(thread_current()->File_Map));
+  }
+
 
 #ifdef USERPROG
   process_cleanup ();

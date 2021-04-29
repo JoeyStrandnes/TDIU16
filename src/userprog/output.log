@@ -1,40 +1,39 @@
-Copying ../examples/line_echo into /tmp/HzRH_IWvGk.dsk...
-Writing command line to /tmp/tdT4zU6m7k.dsk...
-qemu-system-i386 -drive file=/tmp/tdT4zU6m7k.dsk,index=0,format=raw -drive file=/tmp/9JhFrfVmu1.dsk,index=1,format=raw -drive file=/tmp/HzRH_IWvGk.dsk,index=2,format=raw -m 4 -net none -serial stdio -device isa-debug-exit,iobase=0xf4,iosize=0x04
-Kernel command line: -f -q put line_echo run line_echo
+Copying ../examples/file_syscall_tests into /tmp/KqPtzl1DwU.dsk...
+Writing command line to /tmp/QhagMsRoeH.dsk...
+qemu-system-i386 -drive file=/tmp/QhagMsRoeH.dsk,index=0,format=raw -drive file=/tmp/SNYPPSHRM0.dsk,index=1,format=raw -drive file=/tmp/KqPtzl1DwU.dsk,index=2,format=raw -m 4 -net none -monitor null -nographic -device isa-debug-exit,iobase=0xf4,iosize=0x04
+c[?7l[2J[0mSeaBIOS (version 1.13.0-1ubuntu1.1)
+Booting from Hard Disk..Kernel command line: -f -q put fst run fst#
 Pintos booting with 3,968 kB RAM...
 356 pages available in kernel pool.
-356 pages available in user pool.
+355 pages available in user pool.
 # main#1: thread_create("idle", ...) RETURNS 2
-Calibrating timer... 98,176,000 loops/s.
-hd0:0: detected 161 sector (80 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+Calibrating timer... 32,736,000 loops/s.
+hd0:0: detected 169 sector (84 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 4,032 sector (1 MB) disk, model "QEMU HARDDISK", serial "QM00002"
-hd1:0: detected 85 sector (42 kB) disk, model "QEMU HARDDISK", serial "QM00003"
+hd1:0: detected 109 sector (54 kB) disk, model "QEMU HARDDISK", serial "QM00003"
 Formatting file system...done.
 Boot complete.
-Putting 'line_echo' into the file system...
-Executing 'line_echo':
-# main#1: process_execute("line_echo") ENTERED
-# main#1: thread_create("line_echo", ...) RETURNS 3
+Putting 'fst' into the file system...
+Executing 'fst#':
+# main#1: process_execute("fst#") ENTERED
+# main#1: thread_create("fst#", ...) RETURNS 3
 # Preparing to power off...
 ERROR: Main thread about to poweroff with 2 other threads still running!
 ERROR: Check your implementation of process_execute() and process_wait().
-# line_echo#3: start_process("line_echo") ENTERED
-# line_echo#3: start_process(...): load returned 1
-# line_echo#3: start_process("line_echo") DONE
-System Call Read
-System Call Exit
-Status: 0
-# line_echo#3: process_cleanup() ENTERED
-line_echo: exit(-1)
+# fst##3: start_process("fst#") ENTERED
+load: fst#: open failed
+# fst##3: start_process(...): load returned 0
+# fst##3: start_process("fst#") DONE
+# fst##3: process_cleanup() ENTERED
+fst#: exit(-1)
+# fst##3: process_cleanup() DONE with status -1
 Timer: 1000 interrupts per second
-Timer: 7834 ticks
-Thread: 7383 idle ticks, 420 kernel ticks, 37 user ticks
-# line_echo#3: process_cleanup() DONE with status -1
+Timer: 471 ticks
+Thread: 99 idle ticks, 359 kernel ticks, 15 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 59 reads, 178 writes
-hd1:0: 85 reads, 0 writes
-Console: 1373 characters output
+hd0:1: 47 reads, 226 writes
+hd1:0: 109 reads, 0 writes
+Console: 1280 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

@@ -63,5 +63,40 @@
  * where to declare and initialize it correctly. In both cases, consider
  * what size limit that may be appropriate.
  */
+ #include <stdlib.h>
+
+ typedef struct file* value_t;
+ typedef int key_t;
+
+
+ //#define PANIC(message) do { printf("PANIC: %s\n", message); exit(1); } while (0)
+
+ struct file_list
+ {
+   key_t key;
+   value_t value;
+   struct file_list* previous;
+   struct file_list* next;
+ };
+
+ struct map
+ {
+   struct file_list* first_entry_pointer;
+   struct file_list* last_entry_pointer;
+   int elem_counter;
+ };
+
+
+ void map_deinit(struct map* object_pointer);
+
+ void map_init(struct map* object_pointer);
+
+ key_t map_insert(struct map* object_pointer, value_t val);
+
+ value_t map_find(struct map* object_pointer, key_t k);
+
+ value_t map_remove(struct map* object_pointer, key_t k); // Don't forget to deallocate memory
+
+
 
 #endif

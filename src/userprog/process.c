@@ -157,6 +157,9 @@ start_process (struct parameters_to_start_process* parameters)
 
 //    dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
+    map_init(&(thread_current()->File_Map));
+
+
   }
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
