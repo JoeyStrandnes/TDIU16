@@ -259,6 +259,19 @@ process_cleanup (void)
     }
   debug("%s#%d: process_cleanup() DONE with status %d\n",
         cur->name, cur->tid, status);
+
+  struct map *map_ptr = &(thread_current()->File_Map);
+
+  if(map_ptr->elem_counter > 1)
+  {
+    for(int i = map_ptr->elem_counter; i > 2; i--)
+    {
+      file_close(map_find(map_ptr, i));
+    }
+  }
+
+  map_deinit(map_ptr);
+
 }
 
 /* Sets up the CPU for running user code in the current
