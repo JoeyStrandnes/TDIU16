@@ -3,7 +3,7 @@
 
 
 /* Place functions to handle a running process here (process list).
-   
+
    plist.h : Your function declarations and documentation.
    plist.c : Your implementation.
 
@@ -23,11 +23,51 @@
      from the list. Should only remove the information when no process
      or thread need it anymore, but must guarantee it is always
      removed EVENTUALLY.
-     
+
    - A function that print the entire content of the list in a nice,
      clean, readable format.
-     
+
  */
+
+
+#include <stdlib.h>
+#include "threads/synch.h"
+
+typedef int value_t2;
+typedef int key_t;
+
+
+ struct process_list
+ {
+   key_t key;
+   value_t2 value;
+   struct process_list* previous;
+   struct process_list* next;
+ };
+
+
+ struct process_map
+ {
+   struct process_list* first_entry_pointer;
+   struct process_list* last_entry_pointer;
+   struct semaphore list_sema;
+   int elem_counter;
+ };
+
+
+ void process_map_deinit(struct process_map* object_pointer);
+
+ void process_map_init(struct process_map* object_pointer);
+
+ key_t process_map_insert(struct process_map* object_pointer, value_t2 val);
+
+ value_t2 process_map_find(struct process_map* object_pointer, key_t k);
+
+ value_t2 process_map_remove(struct process_map* object_pointer, key_t k); // Don't forget to deallocate memory
+
+
+
+
 
 
 #endif

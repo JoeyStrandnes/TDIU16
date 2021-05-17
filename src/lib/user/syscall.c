@@ -185,3 +185,15 @@ inumber (int fd)
 {
   return syscall1 (SYS_INUMBER, fd);
 }
+
+void
+plist(void)
+{
+  return syscall0 (SYS_PLIST);
+}
+
+void
+sleep(int time)
+{
+  return syscall1 (SYS_SLEEP, time);
+}

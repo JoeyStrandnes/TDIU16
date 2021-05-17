@@ -239,6 +239,31 @@ static int sys_filesize(int fd)
 
 }
 
+tid_t sys_exec(const char* command_line)
+{
+  return process_execute(command_line);
+}
+
+void sys_plist(void)
+{
+  struct process_list* temp_list;
+  struct process_map* temp_map = &thread_current()->Process_Map;
+
+  temp_list = temp_map->first_entry_pointer->next;
+
+  while(temp_list != NULL)
+  {
+    printf("#Key: %d #Value :  %d \n", temp_list->key, temp_list->value);
+    temp_list = temp_list->next;
+  }
+
+
+
+  return;
+}
+
+
+
 
 static void syscall_handler (struct intr_frame *f)
 {
@@ -307,6 +332,16 @@ static void syscall_handler (struct intr_frame *f)
     case SYS_FILESIZE:
     {
       f->eax = sys_filesize(esp[1]);
+      break;
+    }
+    case SYS_EXEC:
+    {
+      f->eax = sys_exec((char*)esp[1]);
+      break;
+    }
+    case SYS_PLIST:
+    {
+      sys_plist();
       break;
     }
 

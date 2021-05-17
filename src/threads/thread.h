@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "userprog/flist.h"
+#include "userprog/plist.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -94,6 +95,7 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;                    /* List element. */
     struct map File_Map;
+    struct process_map Process_Map;
 
     /* YES! You may want to add stuff. But make note of point 2 above. */
 

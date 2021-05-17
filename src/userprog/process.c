@@ -61,6 +61,8 @@ void process_print_list()
 struct parameters_to_start_process
 {
   char* command_line;
+  struct semaphore process_sema;
+  int status;
 };
 
 static void
@@ -72,8 +74,7 @@ start_process(struct parameters_to_start_process* parameters) NO_RETURN;
    be scheduled (and may even exit) before process_execute() returns.
    Returns the new process's thread id, or TID_ERROR if the thread
    cannot be created. */
-int
-process_execute (const char *command_line)
+int process_execute (const char *command_line)
 {
   char debug_name[64];
   int command_line_size = strlen(command_line) + 1;
@@ -96,13 +97,27 @@ process_execute (const char *command_line)
   strlcpy_first_word (debug_name, command_line, 64);
 
   /* SCHEDULES function `start_process' to run (LATER) */
-  thread_id = thread_create (debug_name, PRI_DEFAULT,
-                             (thread_func*)start_process, &arguments);
 
-  process_id = thread_id;
+  sema_init(&arguments.process_sema, 0);
+  thread_id = thread_create (debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
+  sema_down(&arguments.process_sema);
+
+
+
+
+  if(arguments.status != -1)
+  {
+    process_id = thread_id;
+    process_map_insert(&thread_current()->Process_Map, process_id);
+  }
+
+  else
+  {
+    process_id = -1;
+  }
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
-  power_off();
+  //power_off();
 
 
   /* WHICH thread may still be using this right now? */
@@ -169,9 +184,10 @@ start_process (struct parameters_to_start_process* parameters)
        the process start, so this is the place to dump stack content
        for debug purposes. Disable the dump when it works. */
 
-    dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
+    //dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
     map_init(&(thread_current()->File_Map));
+    process_map_init(&(thread_current()->Process_Map));
 
 
   }
@@ -181,7 +197,7 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->tid,
         parameters->command_line);
 
-
+        sema_up(&parameters->process_sema);
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:
      - File doeas not exist
@@ -190,6 +206,7 @@ start_process (struct parameters_to_start_process* parameters)
   */
   if ( ! success )
   {
+    parameters->status = -1;
     thread_exit ();
   }
 
@@ -245,7 +262,7 @@ process_cleanup (void)
   uint32_t       *pd  = cur->pagedir;
   int status = -1;
 
-  //debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
+  debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
@@ -254,7 +271,7 @@ process_cleanup (void)
    * that may sometimes poweroff as soon as process_wait() returns,
    * possibly before the printf is completed.)
    */
-  //printf("%s: exit(%d)\n", thread_name(), status);
+  printf("%s: exit(%d)\n", thread_name(), status);
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
