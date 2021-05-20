@@ -40,7 +40,9 @@ typedef int key_t;
  struct process_list
  {
    key_t key;
-   value_t2 value;
+   value_t2 Process_ID;
+   value_t2 Parent_ID;
+   value_t2 Exit_Status;
    struct process_list* previous;
    struct process_list* next;
  };
@@ -50,20 +52,20 @@ typedef int key_t;
  {
    struct process_list* first_entry_pointer;
    struct process_list* last_entry_pointer;
-   struct semaphore list_sema;
+   struct lock list_lock;
    int elem_counter;
  };
 
 
- void process_map_deinit(struct process_map* object_pointer);
+ void process_map_deinit(void);
 
- void process_map_init(struct process_map* object_pointer);
+ void process_map_init(void);
 
- key_t process_map_insert(struct process_map* object_pointer, value_t2 val);
+ key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID);
 
- value_t2 process_map_find(struct process_map* object_pointer, key_t k);
+ value_t2 process_map_find(key_t k);
 
- value_t2 process_map_remove(struct process_map* object_pointer, key_t k); // Don't forget to deallocate memory
+ value_t2 process_map_remove(key_t k); // Don't forget to deallocate memory :)
 
 
 

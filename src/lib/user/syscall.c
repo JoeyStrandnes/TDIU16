@@ -189,11 +189,11 @@ inumber (int fd)
 void
 plist(void)
 {
-  return syscall0 (SYS_PLIST);
+  syscall0 (SYS_PLIST);
 }
 
 void
 sleep(int time)
 {
-  return syscall1 (SYS_SLEEP, time);
+  syscall1 (SYS_SLEEP, time);
 }

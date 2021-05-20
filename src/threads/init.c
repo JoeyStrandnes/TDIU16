@@ -35,6 +35,11 @@
 #include "filesys/fsutil.h"
 #endif
 
+
+
+extern struct process_map Process_List;
+
+
 /* Amount of physical memory, in 4 kB pages. */
 size_t ram_pages;
 
@@ -117,6 +122,8 @@ main (void)
   gdt_init ();
 #endif
 
+
+
   /* Initialize interrupt handlers. */
   intr_init ();
   timer_init (init_timer_freq);
@@ -126,6 +133,7 @@ main (void)
   exception_init ();
   syscall_init ();
 #endif
+
 
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
@@ -140,11 +148,16 @@ main (void)
   //map_init(&map_ptr); //init the filesystem map
 #endif
 
+
+  //Init process list
+  process_map_init();
+
   printf ("Boot complete.\n");
 
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 
+  process_map_deinit();
   /* Finish up. */
   if (power_off_when_done)
     //User function

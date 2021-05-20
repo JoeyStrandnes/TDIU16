@@ -253,13 +253,9 @@ void sys_plist(void)
 
   while(temp_list != NULL)
   {
-    printf("#Key: %d #Value :  %d \n", temp_list->key, temp_list->value);
+    printf("#Key: %d #Value :  %d \n", temp_list->key, temp_list->Process_ID);
     temp_list = temp_list->next;
   }
-
-
-
-  return;
 }
 
 

@@ -3,20 +3,22 @@
 #include "plist.h"
 
 
-void process_map_init(struct process_map* object_pointer)
+struct process_map Process_List;
+
+void process_map_init(void)
 {
-  object_pointer->first_entry_pointer = (struct process_list*) malloc(sizeof(struct process_list));
-  object_pointer->last_entry_pointer = object_pointer->first_entry_pointer;
-  object_pointer->elem_counter = 1;
-  object_pointer->first_entry_pointer->key = 1;
-  object_pointer->first_entry_pointer->value = NULL;
-  sema_init(&object_pointer->list_sema, 1);
+  Process_List.first_entry_pointer = (struct process_list*) malloc(sizeof(struct process_list));
+  Process_List.last_entry_pointer = Process_List.first_entry_pointer;
+  Process_List.elem_counter = 1;
+  Process_List.first_entry_pointer->key = 1;
+  Process_List.first_entry_pointer->Process_ID = NULL;
+  lock_init(&Process_List.list_lock);
 }
 
 
-key_t process_map_insert(struct process_map* object_pointer, value_t2 val)
+key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID)
 {
-  sema_down(&object_pointer->list_sema);
+  lock_acquire(&Process_List.list_lock);
   struct process_list* temp_ptr;
 
   //struct process_map* Temp_process_map = &(thread_current()->File_process_map);
@@ -25,65 +27,67 @@ key_t process_map_insert(struct process_map* object_pointer, value_t2 val)
   temp_ptr = (struct process_list*) malloc(sizeof(struct process_list));
   if(temp_ptr == NULL)
   {
-    sema_up(&object_pointer->list_sema);
+    lock_release(&Process_List.list_lock);
     return -1;
   }
 
 
   //Add to chain
-  object_pointer->last_entry_pointer->next = temp_ptr;
-  temp_ptr->previous = object_pointer->last_entry_pointer;
-  object_pointer->last_entry_pointer = temp_ptr;
+  Process_List.last_entry_pointer->next = temp_ptr;
+  temp_ptr->previous = Process_List.last_entry_pointer;
+  Process_List.last_entry_pointer = temp_ptr;
 
 
   //Increment elem_counter
-  object_pointer->elem_counter++;
+  Process_List.elem_counter++;
 
   //Add data
 
-  temp_ptr->key = object_pointer->elem_counter;
-  temp_ptr->value = val;
+  temp_ptr->key = Process_List.elem_counter;
+  temp_ptr->Process_ID = ProcessID;
+  temp_ptr->Parent_ID = ParentID;
+  temp_ptr->Exit_Status = -1;
   temp_ptr->next = NULL;
 
-  sema_up(&object_pointer->list_sema);
+  lock_release(&Process_List.list_lock);
   return temp_ptr->key;
 
 }
 
 
-value_t2 process_map_find(struct process_map* object_pointer, key_t k)
+value_t2 process_map_find(key_t k)
 {
-  if(k > object_pointer->elem_counter ||  k < 2)
+  if(k > Process_List.elem_counter ||  k < 2)
   {
-    return NULL; //NULL
+    return -1;
   }
   //Find data
-  struct process_list* temp_ptr = object_pointer->first_entry_pointer;
+  struct process_list* temp_ptr = Process_List.first_entry_pointer;
   for(int i = 1;i < k;i++)
   {
     temp_ptr = temp_ptr->next;
   }
 
-  return temp_ptr->value;
+  return temp_ptr->Process_ID;
 }
 
 
-value_t2 process_map_remove(struct process_map* object_pointer, key_t k)
+value_t2 process_map_remove(key_t k)
 {
-  sema_down(&object_pointer->list_sema);
-  if(k > object_pointer->elem_counter)
+  lock_acquire(&Process_List.list_lock);
+  if(k > Process_List.elem_counter)
   {
-    sema_up(&object_pointer->list_sema);
-    return NULL;
+    lock_release(&Process_List.list_lock);
+    return -1;
   }
 
-  struct process_list* temp_ptr = object_pointer->last_entry_pointer;
+  struct process_list* temp_ptr = Process_List.last_entry_pointer;
   struct process_list* temp_previous_ptr;
   struct process_list* temp_next_ptr;
   value_t2 temp_val;
 
   //find element to removed
-  while(temp_ptr->key != k && k <= object_pointer->elem_counter && k > 1)
+  while(temp_ptr->key != k && k <= Process_List.elem_counter && k > 1)
   {
     temp_ptr->key--;
     temp_ptr = temp_ptr->previous;
@@ -93,50 +97,50 @@ value_t2 process_map_remove(struct process_map* object_pointer, key_t k)
   //removal preparation
   temp_previous_ptr = temp_ptr->previous;
   temp_next_ptr = temp_ptr->next;
-  temp_val = temp_ptr->value;
-  object_pointer->elem_counter--;
+  temp_val = temp_ptr->Process_ID;
+  Process_List.elem_counter--;
 
   //patching up the chain
-  if(k > 1 && object_pointer->elem_counter > 1)
+  if(k > 1 && Process_List.elem_counter > 1)
   {
     temp_next_ptr->previous = temp_previous_ptr;
     temp_previous_ptr->next = temp_next_ptr;
   }
-  else if(object_pointer->elem_counter == 1)
+  else if(Process_List.elem_counter == 1)
   {
-    temp_previous_ptr->previous = object_pointer->first_entry_pointer;
-    object_pointer->last_entry_pointer = object_pointer->first_entry_pointer;
+    temp_previous_ptr->previous = Process_List.first_entry_pointer;
+    Process_List.last_entry_pointer = Process_List.first_entry_pointer;
   }
   else if(temp_ptr->next == NULL)
   {
     temp_previous_ptr->next = NULL;
-    object_pointer->last_entry_pointer = temp_previous_ptr;
+    Process_List.last_entry_pointer = temp_previous_ptr;
   }
   else
   {
-    sema_up(&object_pointer->list_sema);
-    return NULL;
+    lock_release(&Process_List.list_lock);
+    return -1;
   }
 
-  sema_up(&object_pointer->list_sema);
+  lock_release(&Process_List.list_lock);
   free(temp_ptr);
   return temp_val;
 }
 
 
 
-void process_map_deinit(struct process_map* object_pointer)
+void process_map_deinit(void)
 {
-  struct process_list *temp_ptr  = object_pointer->last_entry_pointer;
+  struct process_list *temp_ptr  = Process_List.last_entry_pointer;
   struct process_list *temp_previous_ptr;
 
 
-  while(temp_ptr != object_pointer->first_entry_pointer)
+  while(temp_ptr != Process_List.first_entry_pointer)
   {
     temp_previous_ptr = temp_ptr->previous;
     free(temp_ptr);
     temp_ptr = temp_previous_ptr;
   }
 
-  free(object_pointer->first_entry_pointer);
+  free(Process_List.first_entry_pointer);
 }

@@ -63,6 +63,7 @@ struct parameters_to_start_process
   char* command_line;
   struct semaphore process_sema;
   int status;
+  int parent_id;
 };
 
 static void
@@ -98,9 +99,14 @@ int process_execute (const char *command_line)
 
   /* SCHEDULES function `start_process' to run (LATER) */
 
+  arguments.parent_id = thread_tid();
   sema_init(&arguments.process_sema, 0);
-  thread_id = thread_create (debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
-  sema_down(&arguments.process_sema);
+  thread_id = thread_create(debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
+  if(thread_id != -1)
+  {
+    sema_down(&arguments.process_sema);
+  }
+
 
 
 
@@ -108,7 +114,7 @@ int process_execute (const char *command_line)
   if(arguments.status != -1)
   {
     process_id = thread_id;
-    process_map_insert(&thread_current()->Process_Map, process_id);
+    //process_map_insert(&thread_current()->Process_Map, process_id);
   }
 
   else
@@ -134,8 +140,7 @@ int process_execute (const char *command_line)
 
 /* A thread function that loads a user process and starts it
    running. */
-static void
-start_process (struct parameters_to_start_process* parameters)
+static void start_process (struct parameters_to_start_process* parameters)
 {
   /* The last argument passed to thread_create is received here... */
   struct intr_frame if_;
@@ -187,7 +192,7 @@ start_process (struct parameters_to_start_process* parameters)
     //dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
     map_init(&(thread_current()->File_Map));
-    process_map_init(&(thread_current()->Process_Map));
+    //process_map_init(&(thread_current()->Process_Map));
 
 
   }
@@ -197,13 +202,15 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->tid,
         parameters->command_line);
 
-        sema_up(&parameters->process_sema);
+
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:
      - File doeas not exist
      - File do not contain a valid program
      - Not enough memory
   */
+  sema_up(&parameters->process_sema);
+
   if ( ! success )
   {
     parameters->status = -1;
