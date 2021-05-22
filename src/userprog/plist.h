@@ -57,18 +57,19 @@ typedef int key_t;
  };
 
 
- void process_map_deinit(void);
+void process_map_deinit(void);
 
- void process_map_init(void);
+void process_map_init(void);
 
- key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID);
+key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID);
 
- value_t2 process_map_find(key_t k);
+key_t process_map_find(value_t2 ProcessID);
 
- value_t2 process_map_remove(key_t k); // Don't forget to deallocate memory :)
+value_t2 process_map_remove(key_t k); // Don't forget to deallocate memory :)
 
+void process_map_set_exit_status(value_t2 process_id, int status);
 
-
+int process_map_get_exit_status(value_t2 process_id);
 
 
 

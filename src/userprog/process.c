@@ -49,6 +49,7 @@ void process_init(void)
  * from thread_exit - do not call cleanup twice! */
 void process_exit(int status UNUSED)
 {
+  process_map_set_exit_status(thread_tid(), status);
 }
 
 /* Print a list of all running processes. The list shall include all
@@ -106,10 +107,6 @@ int process_execute (const char *command_line)
   {
     sema_down(&arguments.process_sema);
   }
-
-
-
-
 
   if(arguments.status != -1)
   {
@@ -192,6 +189,7 @@ static void start_process (struct parameters_to_start_process* parameters)
     //dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
     map_init(&(thread_current()->File_Map));
+    process_map_insert(thread_tid(), parameters->parent_id);
     //process_map_init(&(thread_current()->Process_Map));
 
 
@@ -210,7 +208,6 @@ static void start_process (struct parameters_to_start_process* parameters)
      - Not enough memory
   */
   sema_up(&parameters->process_sema);
-
   if ( ! success )
   {
     parameters->status = -1;
@@ -278,6 +275,9 @@ process_cleanup (void)
    * that may sometimes poweroff as soon as process_wait() returns,
    * possibly before the printf is completed.)
    */
+
+  //status = process_map_get_exit_status(thread_tid());
+
   printf("%s: exit(%d)\n", thread_name(), status);
 
   /* Destroy the current process's page directory and switch back
@@ -297,8 +297,10 @@ process_cleanup (void)
     }
   debug("%s#%d: process_cleanup() DONE with status %d\n", cur->name, cur->tid, status);
 
-  struct map *map_ptr = &(thread_current()->File_Map);
 
+
+
+  struct map *map_ptr = &(thread_current()->File_Map);
   if(map_ptr->elem_counter > 1)
   {
     for(int i = map_ptr->elem_counter; i > 2; i--)
@@ -364,7 +366,29 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   struct main_args* esp;
   int argc;
   int total_size;
-  int line_size;
+  int line_size;void
+thread_exit (void)
+{
+  ASSERT (!intr_context ());
+  DEBUG_thread_count_down();
+
+  //User defined features
+  if(thread_current()->priority != PRI_DEFAULT){
+    map_deinit(&(thread_current()->File_Map));
+  }
+
+
+#ifdef USERPROG
+  process_cleanup ();
+#endif
+
+  /* Just set our status to dying and schedule another process.
+     We will be destroyed during the call to schedule_tail(). */
+  intr_disable ();
+  thread_current ()->status = THREAD_DYING;
+  schedule ();
+  NOT_REACHED ();
+}
   int cmdl_size;
 
   /* "cmd_line_on_stack" and "ptr_save" are variables that each store

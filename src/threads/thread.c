@@ -318,10 +318,11 @@ thread_exit (void)
   DEBUG_thread_count_down();
 
   //User defined features
+/*
   if(thread_current()->priority != PRI_DEFAULT){
     map_deinit(&(thread_current()->File_Map));
   }
-
+*/
 
 #ifdef USERPROG
   process_cleanup ();

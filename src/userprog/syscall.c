@@ -54,6 +54,7 @@ static void sys_exit(int status)
 {
     printf("System Call Exit\n");
     printf("Status: %d\n", status);
+    process_exit(status);
     thread_exit();
 }
 

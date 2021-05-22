@@ -11,7 +11,7 @@ void process_map_init(void)
   Process_List.last_entry_pointer = Process_List.first_entry_pointer;
   Process_List.elem_counter = 1;
   Process_List.first_entry_pointer->key = 1;
-  Process_List.first_entry_pointer->Process_ID = NULL;
+  Process_List.first_entry_pointer->Process_ID = 0;
   lock_init(&Process_List.list_lock);
 }
 
@@ -20,6 +20,9 @@ key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID)
 {
   lock_acquire(&Process_List.list_lock);
   struct process_list* temp_ptr;
+
+  printf("Process ID: %d\n", ProcessID);
+  printf("Parent ID: %d\n", ParentID);
 
   //struct process_map* Temp_process_map = &(thread_current()->File_process_map);
 
@@ -55,20 +58,26 @@ key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID)
 }
 
 
-value_t2 process_map_find(key_t k)
+key_t process_map_find(value_t2 ProcessID)
 {
-  if(k > Process_List.elem_counter ||  k < 2)
+
+  if(Process_List.elem_counter < 2)
   {
     return -1;
   }
+
+
   //Find data
   struct process_list* temp_ptr = Process_List.first_entry_pointer;
-  for(int i = 1;i < k;i++)
+  for(int i = 1;i < Process_List.elem_counter;i++)
   {
+    if(ProcessID == temp_ptr->Process_ID){
+      break;
+    }
     temp_ptr = temp_ptr->next;
   }
 
-  return temp_ptr->Process_ID;
+  return temp_ptr->key;
 }
 
 
@@ -143,4 +152,57 @@ void process_map_deinit(void)
   }
 
   free(Process_List.first_entry_pointer);
+}
+
+
+
+void process_map_set_exit_status(value_t2 process_id, int status)
+{
+  lock_acquire(&Process_List.list_lock);
+  printf("Lock Acquired********** \n");
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer->next;
+
+
+  printf("eLeM cOuNtEr: %d\n", Process_List.elem_counter);
+
+  if(temp_ptr == NULL){
+    printf("TEMP POINTER ÄR NULL :O \n");
+  }
+
+  for(int i = 1; i < Process_List.elem_counter;i++)
+  {
+    printf("Linus äter goja: \n");
+    if(temp_ptr->Process_ID == process_id &&  temp_ptr != Process_List.first_entry_pointer)
+    {
+      temp_ptr->Exit_Status = status;
+      break;
+    }
+    if(temp_ptr != Process_List.last_entry_pointer)
+    {
+      temp_ptr = temp_ptr->next;
+    }
+
+
+  }
+  printf("Lock Releeasurur********** \n");
+  lock_release(&Process_List.list_lock);
+}
+
+
+int process_map_get_exit_status(value_t2 process_id)
+{
+  lock_acquire(&Process_List.list_lock);
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer;
+
+  while(temp_ptr != NULL)
+  {
+    if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
+    {
+      break;
+    }
+    temp_ptr = temp_ptr->next;
+  }
+
+  lock_release(&Process_List.list_lock);
+  return (temp_ptr == NULL) ? -1:temp_ptr->Exit_Status;
 }
