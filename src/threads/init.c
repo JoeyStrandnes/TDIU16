@@ -157,7 +157,7 @@ main (void)
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 
-  process_map_deinit();
+  //process_map_deinit();
   /* Finish up. */
   if (power_off_when_done)
     //User function

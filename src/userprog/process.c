@@ -276,7 +276,7 @@ process_cleanup (void)
    * possibly before the printf is completed.)
    */
 
-  //status = process_map_get_exit_status(thread_tid());
+  status = process_map_get_exit_status(thread_tid());
 
   printf("%s: exit(%d)\n", thread_name(), status);
 
