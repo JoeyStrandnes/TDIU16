@@ -13,6 +13,11 @@
 #include "userprog/pagedir.h"
 #include "userprog/process.h"
 #include "devices/input.h"
+//#include "threads/init.h"
+
+
+extern struct process_map Process_List;
+
 
 static void syscall_handler (struct intr_frame *);
 
@@ -248,13 +253,13 @@ tid_t sys_exec(const char* command_line)
 void sys_plist(void)
 {
   struct process_list* temp_list;
-  struct process_map* temp_map = &thread_current()->Process_Map;
+  //struct process_map* temp_map = &thread_current()->Process_Map;
 
-  temp_list = temp_map->first_entry_pointer->next;
+  temp_list = Process_List.first_entry_pointer->next;
 
   while(temp_list != NULL)
   {
-    printf("#Key: %d #Value :  %d \n", temp_list->key, temp_list->Process_ID);
+    printf("#Key: %d #Process ID: %d #Parent ID: %d \n", temp_list->key, temp_list->Process_ID, temp_list->Parent_ID);
     temp_list = temp_list->next;
   }
 }

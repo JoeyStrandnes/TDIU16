@@ -91,6 +91,6 @@ int main(int argc, char* argv[])
     while (ticks--);
     
   }
-  //plist();
+  plist();
   return 0;
 }
