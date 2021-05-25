@@ -81,6 +81,7 @@ struct parameters_to_start_process
   struct semaphore process_sema;
   int status;
   int parent_id;
+  int child_id;
 };
 
 static void
@@ -121,17 +122,17 @@ int process_execute (const char *command_line)
   thread_id = thread_create(debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
   if(thread_id != -1)
   {
-    debug("Waiting for child process \n");
-    sema_down(&arguments.process_sema);
+     sema_down(&arguments.process_sema);
+    if(arguments.status == 0)
+    {
+      process_id = arguments.child_id;
+    }
+    else
+    {
+      process_id = -1;
+    }
   }
-  debug("Thread ID: %d Status: %d \n", thread_id, arguments.status);
-
-  if(arguments.status != -1)
-  {
-    process_id = thread_id;
-    //process_map_insert(&thread_current()->Process_Map, process_id);
-  }
-
+  debug("Process ID: %d Status: %d \n", process_id, arguments.status);
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   //power_off();
@@ -202,11 +203,14 @@ static void start_process (struct parameters_to_start_process* parameters)
 
     //dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
-    map_init(&(thread_current()->File_Map));
+    parameters->status = 0;
+    parameters->child_id = thread_tid();
+
+    //map_init(&(thread_current()->File_Map));
     process_map_insert(thread_tid(), parameters->parent_id);
     //process_map_init(&(thread_current()->Process_Map));
 
-
+   
   }
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
@@ -221,19 +225,15 @@ static void start_process (struct parameters_to_start_process* parameters)
      - File do not contain a valid program
      - Not enough memory
   */
-  
   sema_up(&parameters->process_sema);
+
   if ( ! success )
   {
     parameters->status = -1;
     thread_exit ();
   }
-  else
-  {
-    parameters->status = 0;
-  }
 
-  
+   
   /* Start the user process by simulating a return from an interrupt,
      implemented by intr_exit (in threads/intr-stubs.S). Because
      intr_exit takes all of its arguments on the stack in the form of
@@ -264,11 +264,17 @@ process_wait (int child_id)
   
   if(is_child_process(child_id))
   {
-    if(get_wait_status(thread_tid()) == 0) //0 means that it is not being waited upon currently
+    debug("### Child is real \n");
+    if(get_wait_status(child_id) == 0) //0 means that it is not being waited upon currently
     {
+      //debug("### Wait status %d")
       use_wait_lock(child_id);
       status = process_map_get_exit_status(child_id);
     }
+  }
+  else
+  {
+    debug("ERROR invalid child process");
   }
 
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
@@ -330,16 +336,16 @@ process_cleanup (void)
 
 
 
-  struct map *map_ptr = &(thread_current()->File_Map);
-  if(map_ptr->elem_counter > 1)
+  
+  if(file_map.elem_counter > 1)
   {
-    for(int i = map_ptr->elem_counter; i > 2; i--)
+    for(int i = file_map.elem_counter; i > 2; i--)
     {
-      file_close(map_find(map_ptr, i));
+      file_close(map_find(i));
     }
   }
 
-  map_deinit(map_ptr);
+  //map_deinit(map_ptr);
 
 }
 
