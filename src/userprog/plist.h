@@ -43,6 +43,9 @@ typedef int key_t;
    value_t2 Process_ID;
    value_t2 Parent_ID;
    value_t2 Exit_Status;
+   bool is_active;
+   bool is_waited_upon;
+   struct semaphore wait_lock;
    struct process_list* previous;
    struct process_list* next;
  };
@@ -71,6 +74,14 @@ void process_map_set_exit_status(value_t2 process_id, int status);
 
 int process_map_get_exit_status(value_t2 process_id);
 
+void set_active_status(value_t2 process_id, bool status);
 
+bool get_active_status(value_t2 process_id);
+
+int get_wait_status(value_t2 process_id);
+
+int use_wait_lock(value_t2 process_id);
+
+bool is_child_process(value_t2 child_id);
 
 #endif

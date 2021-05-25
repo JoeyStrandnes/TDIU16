@@ -25,6 +25,11 @@
 /* HACK defines code you must remove and implement in a proper way */
 #define HACK
 
+
+extern struct process_map Process_List;
+
+
+
 struct main_args
 {
   void (*ret)(void);
@@ -49,6 +54,7 @@ void process_init(void)
  * from thread_exit - do not call cleanup twice! */
 void process_exit(int status UNUSED)
 {
+  set_active_status(thread_tid(), false);
   process_map_set_exit_status(thread_tid(), status);
 }
 
@@ -56,6 +62,16 @@ void process_exit(int status UNUSED)
  * relevant debug information in a clean, readable format. */
 void process_print_list()
 {
+    struct process_list* temp_list;
+  //struct process_map* temp_map = &thread_current()->Process_Map;
+
+  temp_list = Process_List.first_entry_pointer->next;
+
+  while(temp_list != NULL)
+  {
+    printf("#Key: %d #Process ID: %d #Parent ID: %d #Exit Status: %d \n", temp_list->key, temp_list->Process_ID, temp_list->Parent_ID, temp_list->Exit_Status);
+    temp_list = temp_list->next;
+  }
 }
 
 
@@ -105,8 +121,10 @@ int process_execute (const char *command_line)
   thread_id = thread_create(debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
   if(thread_id != -1)
   {
+    debug("Waiting for child process \n");
     sema_down(&arguments.process_sema);
   }
+  debug("Thread ID: %d Status: %d \n", thread_id, arguments.status);
 
   if(arguments.status != -1)
   {
@@ -114,10 +132,6 @@ int process_execute (const char *command_line)
     //process_map_insert(&thread_current()->Process_Map, process_id);
   }
 
-  else
-  {
-    process_id = -1;
-  }
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   //power_off();
@@ -207,13 +221,19 @@ static void start_process (struct parameters_to_start_process* parameters)
      - File do not contain a valid program
      - Not enough memory
   */
+  
   sema_up(&parameters->process_sema);
   if ( ! success )
   {
     parameters->status = -1;
     thread_exit ();
   }
+  else
+  {
+    parameters->status = 0;
+  }
 
+  
   /* Start the user process by simulating a return from an interrupt,
      implemented by intr_exit (in threads/intr-stubs.S). Because
      intr_exit takes all of its arguments on the stack in the form of
@@ -241,6 +261,16 @@ process_wait (int child_id)
   debug("%s#%d: process_wait(%d) ENTERED\n",
         cur->name, cur->tid, child_id);
   /* Yes! You need to do something good here ! */
+  
+  if(is_child_process(child_id))
+  {
+    if(get_wait_status(thread_tid()) == 0) //0 means that it is not being waited upon currently
+    {
+      use_wait_lock(child_id);
+      status = process_map_get_exit_status(child_id);
+    }
+  }
+
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         cur->name, cur->tid, child_id, status);
 

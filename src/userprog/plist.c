@@ -10,6 +10,7 @@ void process_map_init(void)
   Process_List.first_entry_pointer = (struct process_list*) malloc(sizeof(struct process_list));
   Process_List.last_entry_pointer = Process_List.first_entry_pointer;
   Process_List.elem_counter = 1;
+  Process_List.first_entry_pointer->is_active = false;
   Process_List.first_entry_pointer->key = 1;
   Process_List.first_entry_pointer->Process_ID = 0;
   lock_init(&Process_List.list_lock);
@@ -50,8 +51,11 @@ key_t process_map_insert(value_t2 ProcessID, value_t2 ParentID)
   temp_ptr->Process_ID = ProcessID;
   temp_ptr->Parent_ID = ParentID;
   temp_ptr->Exit_Status = -1;
+  temp_ptr->is_active = true;
+  temp_ptr->is_waited_upon = false;
   temp_ptr->next = NULL;
 
+  sema_init(&temp_ptr->wait_lock,0);
   lock_release(&Process_List.list_lock);
   return temp_ptr->key;
 
@@ -180,6 +184,7 @@ void process_map_set_exit_status(value_t2 process_id, int status)
     }
     
   }
+  sema_up(&temp_ptr->wait_lock);
   //printf("Lock Releeasurur********** \n");
   lock_release(&Process_List.list_lock);
 }
@@ -201,4 +206,114 @@ int process_map_get_exit_status(value_t2 process_id)
 
   lock_release(&Process_List.list_lock);
   return (temp_ptr == NULL) ? -1:temp_ptr->Exit_Status;
+}
+
+
+
+void set_active_status(value_t2 process_id, bool status)
+{
+  lock_acquire(&Process_List.list_lock);
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer;
+
+  while(temp_ptr != NULL)
+  {
+    if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
+    {
+      temp_ptr->is_active = status;
+      break;
+    }
+    temp_ptr = temp_ptr->next;
+  }
+
+  lock_release(&Process_List.list_lock); 
+}
+
+
+
+bool get_active_status(value_t2 process_id)
+{
+  lock_acquire(&Process_List.list_lock);
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer;
+  bool status = false;
+
+  while(temp_ptr != NULL)
+  {
+    if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
+    {
+      status = temp_ptr->is_active;
+      break;
+    }
+    temp_ptr = temp_ptr->next;
+  }
+  lock_release(&Process_List.list_lock);
+  return status;
+}
+
+
+
+int get_wait_status(value_t2 process_id)
+{
+  lock_acquire(&Process_List.list_lock);
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer;
+  int status = -1;
+
+  while(temp_ptr != NULL)
+  {
+    if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
+    {
+      if(temp_ptr->is_waited_upon)
+      {
+        status = 1;
+      }
+      else
+      {
+        status = 0;
+      }
+      break;
+    }
+    temp_ptr = temp_ptr->next;
+  }
+  lock_release(&Process_List.list_lock);
+  return status;
+}
+
+
+
+int use_wait_lock(value_t2 process_id)
+{
+  lock_acquire(&Process_List.list_lock);
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer;
+  int status = -1;
+  while(temp_ptr != NULL)
+  {
+    if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
+    {
+      status = 1;
+      sema_down(&temp_ptr->wait_lock);
+      break;
+    }
+    temp_ptr = temp_ptr->next;
+  }
+  lock_release(&Process_List.list_lock);
+  return status;
+}
+
+
+
+bool is_child_process(value_t2 child_id)
+{
+  lock_acquire(&Process_List.list_lock);
+  struct process_list* temp_ptr =  Process_List.first_entry_pointer;
+  bool status = false;
+  while(temp_ptr != NULL)
+  {
+    if(temp_ptr->Process_ID == child_id && temp_ptr->Parent_ID == thread_tid() && temp_ptr != Process_List.first_entry_pointer)
+    {
+      status = true;
+      break;
+    }
+    temp_ptr = temp_ptr->next;
+  }
+  lock_release(&Process_List.list_lock);
+  return status;
 }

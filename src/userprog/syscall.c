@@ -16,7 +16,7 @@
 //#include "threads/init.h"
 
 
-extern struct process_map Process_List;
+
 
 
 static void syscall_handler (struct intr_frame *);
@@ -245,6 +245,12 @@ static int sys_filesize(int fd)
 
 }
 
+void sys_sleep(int millis)
+{
+
+
+}
+
 tid_t sys_exec(const char* command_line)
 {
   return process_execute(command_line);
@@ -252,18 +258,13 @@ tid_t sys_exec(const char* command_line)
 
 void sys_plist(void)
 {
-  struct process_list* temp_list;
-  //struct process_map* temp_map = &thread_current()->Process_Map;
-
-  temp_list = Process_List.first_entry_pointer->next;
-
-  while(temp_list != NULL)
-  {
-    printf("#Key: %d #Process ID: %d #Parent ID: %d \n", temp_list->key, temp_list->Process_ID, temp_list->Parent_ID);
-    temp_list = temp_list->next;
-  }
+  process_print_list();
 }
 
+int sys_wait(tid_t pid)
+{
+  return process_wait(pid);
+}
 
 
 
@@ -344,6 +345,16 @@ static void syscall_handler (struct intr_frame *f)
     case SYS_PLIST:
     {
       sys_plist();
+      break;
+    }
+    case SYS_SLEEP:
+    {
+      sys_sleep(esp[1]);
+      break;
+    }
+    case SYS_WAIT:
+    {
+      f->eax = sys_wait(esp[1]);
       break;
     }
 
