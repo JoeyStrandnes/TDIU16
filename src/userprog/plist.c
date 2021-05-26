@@ -123,6 +123,7 @@ value_t2 process_map_remove(key_t k)
   {
     temp_previous_ptr->previous = Process_List.first_entry_pointer;
     Process_List.last_entry_pointer = Process_List.first_entry_pointer;
+    Process_List.first_entry_pointer->next = NULL;
   }
   else if(temp_ptr->next == NULL)
   {
@@ -135,8 +136,8 @@ value_t2 process_map_remove(key_t k)
     return -1;
   }
 
-  lock_release(&Process_List.list_lock);
   free(temp_ptr);
+  lock_release(&Process_List.list_lock);
   return temp_val;
 }
 
@@ -199,6 +200,7 @@ int process_map_get_exit_status(value_t2 process_id)
   {
     if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
     {
+      sema_up(&temp_ptr->wait_lock);
       break;
     }
     temp_ptr = temp_ptr->next;
@@ -289,12 +291,16 @@ int use_wait_lock(value_t2 process_id)
     if(temp_ptr->Process_ID == process_id && temp_ptr != Process_List.first_entry_pointer)
     {
       status = 1;
-      sema_down(&temp_ptr->wait_lock);
+      //printf("### Debug wait lock. Current thread: %s", thread_tid());
       break;
     }
     temp_ptr = temp_ptr->next;
   }
   lock_release(&Process_List.list_lock);
+  if(status == 1);
+  {
+    sema_down(&temp_ptr->wait_lock);
+  }
   return status;
 }
 

@@ -28,7 +28,7 @@
 
 extern struct process_map Process_List;
 
-
+struct lock load_lock;
 
 struct main_args
 {
@@ -45,6 +45,7 @@ void* setup_main_stack(const char* command_line, void* stack_top);
  * the process subsystem. */
 void process_init(void)
 {
+  //lock_init(&load_lock);
 }
 
 /* This function is currently never called. As thread_exit does not
@@ -120,10 +121,16 @@ int process_execute (const char *command_line)
   arguments.parent_id = thread_tid();
   sema_init(&arguments.process_sema, 0);
   thread_id = thread_create(debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
-  if(thread_id != -1)
+  
+  if(thread_id == -1)
   {
-     sema_down(&arguments.process_sema);
-    if(arguments.status == 0)
+    process_id = -1;
+  }
+  else
+  {
+    printf("### Sema down \n");
+    sema_down(&arguments.process_sema);
+    if(arguments.child_id != -1)
     {
       process_id = arguments.child_id;
     }
@@ -131,8 +138,9 @@ int process_execute (const char *command_line)
     {
       process_id = -1;
     }
+   
   }
-  debug("Process ID: %d Status: %d \n", process_id, arguments.status);
+  debug("Process ID: %d Status: %d \n", process_id, arguments.child_id);
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   //power_off();
@@ -172,7 +180,9 @@ static void start_process (struct parameters_to_start_process* parameters)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
+  //lock_acquire(&load_lock);
   success = load (file_name, &if_.eip, &if_.esp);
+  //lock_release(&load_lock);
 
   debug("%s#%d: start_process(...): load returned %d\n",
         thread_current()->name,
@@ -190,9 +200,13 @@ static void start_process (struct parameters_to_start_process* parameters)
        "pretend" the arguments are present on the stack. A normal
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
-
-
-//HACK if_.esp -= 12; /* Unacceptable solution. */
+    if(thread_tid() == -1)
+    {
+      success = false;
+    }
+    else
+    {
+      //HACK if_.esp -= 12; /* Unacceptable solution. */
 
      if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
@@ -203,13 +217,16 @@ static void start_process (struct parameters_to_start_process* parameters)
 
     //dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
-    parameters->status = 0;
-    parameters->child_id = thread_tid();
+      parameters->status = 0;
+      parameters->child_id = thread_tid();
 
-    //map_init(&(thread_current()->File_Map));
-    process_map_insert(thread_tid(), parameters->parent_id);
-    //process_map_init(&(thread_current()->Process_Map));
-
+      //map_init(&(thread_current()->File_Map));
+      process_map_insert(thread_tid(), parameters->parent_id);
+      //process_map_init(&(thread_current()->Process_Map));
+      printf("### Sema up \n");
+      sema_up(&parameters->process_sema);
+      
+    }
    
   }
 
@@ -225,11 +242,14 @@ static void start_process (struct parameters_to_start_process* parameters)
      - File do not contain a valid program
      - Not enough memory
   */
-  sema_up(&parameters->process_sema);
+  
 
   if ( ! success )
   {
-    parameters->status = -1;
+    parameters->child_id = -1;
+    printf("### Sema up \n");
+    debug("ERROR: LOAD FAILED \n");
+    sema_up(&parameters->process_sema);
     thread_exit ();
   }
 
@@ -264,12 +284,13 @@ process_wait (int child_id)
   
   if(is_child_process(child_id))
   {
-    debug("### Child is real \n");
+    //debug("### Child is real \n");
     if(get_wait_status(child_id) == 0) //0 means that it is not being waited upon currently
     {
-      //debug("### Wait status %d")
+      //debug("### %s is waiting", thread_tid());
       use_wait_lock(child_id);
       status = process_map_get_exit_status(child_id);
+      set_active_status(child_id, false);
     }
   }
   else
@@ -334,17 +355,17 @@ process_cleanup (void)
   debug("%s#%d: process_cleanup() DONE with status %d\n", cur->name, cur->tid, status);
 
 
-
-
+/*
+  struct map * file_map = &thread_current()->File_Map;
   
-  if(file_map.elem_counter > 1)
+  if(file_map->elem_counter > 1)
   {
-    for(int i = file_map.elem_counter; i > 2; i--)
+    for(int i = file_map->elem_counter; i > 2; i--)
     {
-      file_close(map_find(i));
+      file_close(map_find(file_map, i));
     }
   }
-
+*/
   //map_deinit(map_ptr);
 
 }
@@ -402,29 +423,7 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   struct main_args* esp;
   int argc;
   int total_size;
-  int line_size;void
-thread_exit (void)
-{
-  ASSERT (!intr_context ());
-  DEBUG_thread_count_down();
-
-  //User defined features
-  if(thread_current()->priority != PRI_DEFAULT){
-    map_deinit(&(thread_current()->File_Map));
-  }
-
-
-#ifdef USERPROG
-  process_cleanup ();
-#endif
-
-  /* Just set our status to dying and schedule another process.
-     We will be destroyed during the call to schedule_tail(). */
-  intr_disable ();
-  thread_current ()->status = THREAD_DYING;
-  schedule ();
-  NOT_REACHED ();
-}
+  int line_size;
   int cmdl_size;
 
   /* "cmd_line_on_stack" and "ptr_save" are variables that each store
