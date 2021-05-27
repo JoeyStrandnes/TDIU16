@@ -335,7 +335,7 @@ process_cleanup (void)
 
   status = process_map_get_exit_status(thread_tid());
 
-  printf("%s: exit(%d)\n", thread_name(), status);
+  //printf("%s: exit(%d)\n", thread_name(), status);
 
 
 

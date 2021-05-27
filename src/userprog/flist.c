@@ -56,7 +56,7 @@ key_t map_insert(struct map* object_pointer, value_t val)
 
 value_t map_find(struct map* object_pointer, key_t k)
 {
-  lock_acquire(&object_pointer->map_lock);
+  //lock_acquire(&object_pointer->map_lock);
   if(k > object_pointer->ID_counter ||  k < 2)
   {
     //PANIC("Key not found");
@@ -70,13 +70,13 @@ value_t map_find(struct map* object_pointer, key_t k)
   struct file_list* temp_ptr = object_pointer->first_entry_pointer;
   while(temp_ptr != NULL)
   {
-    printf("temp_ptr->key: %d \n", temp_ptr->key);
+    //printf("temp_ptr->key: %d \n", temp_ptr->key);
     if(temp_ptr->key == k)
     {
       break;
     }
 
-    printf("temp_ptr: %u Last entry pointer: %u \n", temp_ptr, object_pointer->last_entry_pointer);
+    //printf("temp_ptr: %u Last entry pointer: %u \n", temp_ptr, object_pointer->last_entry_pointer);
     if(temp_ptr != object_pointer->last_entry_pointer && temp_ptr != NULL)
     {
       temp_ptr = temp_ptr->next;
@@ -86,7 +86,7 @@ value_t map_find(struct map* object_pointer, key_t k)
       temp_ptr = NULL;
     }
   }
-  lock_release(&object_pointer->map_lock);
+  //lock_release(&object_pointer->map_lock);
   
   if(temp_ptr != NULL)
   {

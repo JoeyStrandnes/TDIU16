@@ -83,7 +83,7 @@ static int sys_write(int fd, char *buffer, unsigned size)
     {
       return -1;
     }
-
+    
     return file_write(file_ptr, buffer, size);
 
 
@@ -120,9 +120,6 @@ static int sys_read(int fd, char *buffer, unsigned size)
 
 
   }
-
-
-
   else if (fd == STDIN_FILENO) //Från tangentbordet
   {
     unsigned counter = 0;
