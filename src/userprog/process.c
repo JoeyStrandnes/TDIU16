@@ -220,7 +220,7 @@ static void start_process (struct parameters_to_start_process* parameters)
       parameters->status = 0;
       parameters->child_id = thread_tid();
 
-      //map_init(&(thread_current()->File_Map));
+      map_init(&(thread_current()->File_Map));
       process_map_insert(thread_tid(), parameters->parent_id);
       //process_map_init(&(thread_current()->Process_Map));
       printf("### Sema up \n");
@@ -337,6 +337,23 @@ process_cleanup (void)
 
   printf("%s: exit(%d)\n", thread_name(), status);
 
+
+
+  if(status != -1)
+  {
+    struct map * file_map = &thread_current()->File_Map;
+  
+    if(file_map->elem_counter > 1)
+    {
+      for(int i = file_map->elem_counter; i > 2; i--)
+      {
+        file_close(map_find(file_map, i));
+      }
+    }
+
+    map_deinit(file_map);
+  }
+
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   if (pd != NULL)
@@ -355,18 +372,8 @@ process_cleanup (void)
   debug("%s#%d: process_cleanup() DONE with status %d\n", cur->name, cur->tid, status);
 
 
-/*
-  struct map * file_map = &thread_current()->File_Map;
-  
-  if(file_map->elem_counter > 1)
-  {
-    for(int i = file_map->elem_counter; i > 2; i--)
-    {
-      file_close(map_find(file_map, i));
-    }
-  }
-*/
-  //map_deinit(map_ptr);
+
+
 
 }
 

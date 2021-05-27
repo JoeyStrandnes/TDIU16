@@ -165,7 +165,7 @@ static int sys_open(const char *file)
 
   int temp =  map_insert(&(thread_current()->File_Map), file_ptr);
 
-  printf("Map insert status %d\n", temp);
+  //printf("Map insert status %d\n", temp);
   return temp;
 
 }

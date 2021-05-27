@@ -64,6 +64,7 @@
  * what size limit that may be appropriate.
  */
  #include <stdlib.h>
+ #include "threads/synch.h"
 
  typedef struct file* value_t;
  typedef int key_t;
@@ -83,7 +84,9 @@
  {
    struct file_list* first_entry_pointer;
    struct file_list* last_entry_pointer;
+   struct lock map_lock;
    int elem_counter;
+   int ID_counter;
  };
 
 
