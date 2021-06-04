@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "pfs.h"
+#include "threads/thread.h"
 
 char buffer[BIG];
 
@@ -23,6 +24,8 @@ int main(int argc, char* argv[])
   if (argc != 3 || strlen(argv[1]) != 1 || strlen(argv[2]) != 1)
     exit(1);
   
+
+  debug("Writer running\n");
   start = argv[1][0];
   end   = argv[2][0];
   
@@ -34,6 +37,7 @@ int main(int argc, char* argv[])
         buffer[j] = c;
       
       id = open("file.1");
+      //debug("thread: %s %d   id = %d \n", thread_name(), thread_tid(), id);
       write_count = write(id, buffer, BIG);
       
       if ( write_count != BIG )

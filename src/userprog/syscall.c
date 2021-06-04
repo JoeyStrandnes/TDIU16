@@ -13,6 +13,7 @@
 #include "userprog/pagedir.h"
 #include "userprog/process.h"
 #include "devices/input.h"
+
 //#include "threads/init.h"
 
 
@@ -47,8 +48,6 @@ const int argc[] = {
 };
 
 
-
-
 static void sys_halt(void)
 {
   printf("System Call Halt\n");
@@ -57,23 +56,27 @@ static void sys_halt(void)
 
 static void sys_exit(int status)
 {
-    printf("System Call Exit\n");
-    printf("Status: %d\n", status);
-    process_exit(status);
-    thread_exit();
+  //printf("System Call Exit: thread: %s#%d\n", thread_name(), thread_tid());
+  //printf("Status: %d\n", status);
+  process_exit(status);
+  thread_exit();
 }
 
 
 static int sys_write(int fd, char *buffer, unsigned size)
 {
 
-  //printf("System Call Write\n");
+ 
 
 
   if(fd == STDOUT_FILENO) // Till skärmen
   {
     putbuf(buffer, size); //putbuf(const char *buffer, size_t n);
     return size;
+  }
+  else if (fd == STDIN_FILENO) //Från tangentbordet
+  {
+    return -1;
   }
 
   if(fd > STDOUT_FILENO)
@@ -83,16 +86,10 @@ static int sys_write(int fd, char *buffer, unsigned size)
     {
       return -1;
     }
-    
-    return file_write(file_ptr, buffer, size);
-
-
-  }
-
-
-  else if (fd == STDIN_FILENO) //Från tangentbordet
-  {
-    return -1;
+    int bytes_written = file_write(file_ptr, buffer, size);
+    //debug("thread: %s #%d STRING: %s \n", thread_name(), thread_tid(), buffer);
+    //debug("System Call Write\n");
+    return bytes_written;
   }
 
   return -1;
@@ -101,25 +98,12 @@ static int sys_write(int fd, char *buffer, unsigned size)
 static int sys_read(int fd, char *buffer, unsigned size)
 {
 
-  //printf("System Call Read\n");
+  //debug("System Call read: %d\n", fd);
 
   if(fd == STDOUT_FILENO) // Till skärmen
   {
     return -1;
   } // STDOUT_FILENO - END
-
-  if(fd > STDOUT_FILENO)
-  {
-    struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
-    if(file_ptr == NULL)
-    {
-      return -1;
-    }
-
-    return file_read(file_ptr, buffer, size);
-
-
-  }
   else if (fd == STDIN_FILENO) //Från tangentbordet
   {
     unsigned counter = 0;
@@ -147,6 +131,17 @@ static int sys_read(int fd, char *buffer, unsigned size)
     return counter;
 
   }//STDOUT_FILENO - END
+    if(fd > STDOUT_FILENO)
+  {
+    struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
+    if(file_ptr == NULL)
+    {
+      return -1;
+    }
+    //debug("System Call Read\n");
+    return file_read(file_ptr, buffer, size);
+
+  }
 
   return -1; //Catch error
 }
@@ -244,8 +239,7 @@ static int sys_filesize(int fd)
 
 void sys_sleep(int millis)
 {
-
-
+  timer_msleep(millis);
 }
 
 tid_t sys_exec(const char* command_line)

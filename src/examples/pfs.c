@@ -28,5 +28,21 @@ int main(void)
   {
     wait(pid[i]);
   }
+  debug("Process List: \n");
+  /*
+  int fd = open("file.1");
+
+  char* buff;
+  int bytes_read;
+
+  bytes_read = read(fd, &buff, 50000);
+
+  debug("file.1 : %s", buff);
+
+
+  close(fd);
+  */
+  plist();
+
   exit(0);
 }

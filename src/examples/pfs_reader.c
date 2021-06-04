@@ -15,6 +15,7 @@ int main(void)
   int bytes, i, j, inconsistency;
   int id, messages;
   
+  debug("Reader running\n");
   messages = open("messages");
   
   for (i = 0; i < TIMES; ++i)
@@ -34,10 +35,10 @@ int main(void)
       if (buffer[0] != buffer[j])
       {
         /* Ooops, inconsistency */
-	write(messages, "INCONSISTENCY.", 14);
-	printf("INCONSISTENCY\n");
-	inconsistency = 1;
-	break; /* no need to check further */
+        write(messages, "INCONSISTENCY.", 14);
+        printf("INCONSISTENCY\n");
+        inconsistency = 1;
+        break; /* no need to check further */
       }
     }
     if (!inconsistency)

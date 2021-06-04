@@ -53,9 +53,10 @@ void process_init(void)
  * instead. Note however that all cleanup after a process must be done
  * in process_cleanup, and that process_cleanup are already called
  * from thread_exit - do not call cleanup twice! */
-void process_exit(int status UNUSED)
+void process_exit(int status)
 {
-  set_active_status(thread_tid(), false);
+  //set_active_status(thread_tid(), false);
+  //debug("Process_Exit status: %d \n", status);
   process_map_set_exit_status(thread_tid(), status);
 }
 
@@ -70,7 +71,9 @@ void process_print_list()
 
   while(temp_list != NULL)
   {
+    lock_acquire(&temp_list->synch_lock);
     printf("#Key: %d #Process ID: %d #Parent ID: %d #Exit Status: %d \n", temp_list->key, temp_list->Process_ID, temp_list->Parent_ID, temp_list->Exit_Status);
+    lock_release(&temp_list->synch_lock);
     temp_list = temp_list->next;
   }
 }
@@ -122,25 +125,13 @@ int process_execute (const char *command_line)
   sema_init(&arguments.process_sema, 0);
   thread_id = thread_create(debug_name, PRI_DEFAULT,(thread_func*)start_process, &arguments);
   
-  if(thread_id == -1)
+  if(thread_id != -1)
   {
-    process_id = -1;
-  }
-  else
-  {
-    printf("### Sema down \n");
+    //printf("### Sema down \n");
     sema_down(&arguments.process_sema);
-    if(arguments.child_id != -1)
-    {
-      process_id = arguments.child_id;
-    }
-    else
-    {
-      process_id = -1;
-    }
-   
+    process_id = arguments.child_id;  
   }
-  debug("Process ID: %d Status: %d \n", process_id, arguments.child_id);
+  //debug("#Process ID: %d Status: %d \n", process_id, arguments.child_id);
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   //power_off();
@@ -183,6 +174,8 @@ static void start_process (struct parameters_to_start_process* parameters)
   //lock_acquire(&load_lock);
   success = load (file_name, &if_.eip, &if_.esp);
   //lock_release(&load_lock);
+  parameters->child_id = -1;
+  parameters->status = -1;
 
   debug("%s#%d: start_process(...): load returned %d\n",
         thread_current()->name,
@@ -200,12 +193,6 @@ static void start_process (struct parameters_to_start_process* parameters)
        "pretend" the arguments are present on the stack. A normal
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
-    if(thread_tid() == -1)
-    {
-      success = false;
-    }
-    else
-    {
       //HACK if_.esp -= 12; /* Unacceptable solution. */
 
      if_.esp = setup_main_stack(parameters->command_line, if_.esp);
@@ -217,16 +204,14 @@ static void start_process (struct parameters_to_start_process* parameters)
 
     //dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
-      parameters->status = 0;
-      parameters->child_id = thread_tid();
+    parameters->status = 0;
+    parameters->child_id = thread_tid();
 
-      map_init(&(thread_current()->File_Map));
-      process_map_insert(thread_tid(), parameters->parent_id);
-      //process_map_init(&(thread_current()->Process_Map));
-      printf("### Sema up \n");
-      sema_up(&parameters->process_sema);
-      
-    }
+    map_init(&(thread_current()->File_Map));
+    process_map_insert(thread_tid(), parameters->parent_id);
+
+    //process_map_init(&(thread_current()->Process_Map));
+    //printf("### Sema up \n");      
    
   }
 
@@ -243,16 +228,14 @@ static void start_process (struct parameters_to_start_process* parameters)
      - Not enough memory
   */
   
-
+  sema_up(&parameters->process_sema);
   if ( ! success )
   {
-    parameters->child_id = -1;
-    printf("### Sema up \n");
+    thread_current()->process_error = -1;
+    //printf("### Sema up \n");
     debug("ERROR: LOAD FAILED \n");
-    sema_up(&parameters->process_sema);
     thread_exit ();
   }
-
    
   /* Start the user process by simulating a return from an interrupt,
      implemented by intr_exit (in threads/intr-stubs.S). Because
@@ -287,17 +270,18 @@ process_wait (int child_id)
     //debug("### Child is real \n");
     if(get_wait_status(child_id) == 0) //0 means that it is not being waited upon currently
     {
-      //debug("### %s is waiting", thread_tid());
+      //debug("%s#%d is waiting for %d\n", thread_name(), thread_tid(), child_id);
       use_wait_lock(child_id);
       status = process_map_get_exit_status(child_id);
-      set_active_status(child_id, false);
+      //debug("exiting wait\n");
     }
   }
+  /*
   else
   {
     debug("ERROR invalid child process");
   }
-
+  */
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         cur->name, cur->tid, child_id, status);
 
@@ -333,21 +317,33 @@ process_cleanup (void)
    * possibly before the printf is completed.)
    */
 
+
   status = process_map_get_exit_status(thread_tid());
+  set_active_status(thread_tid(), false);
 
+  unlock_wait_lock(thread_tid());
+/*
+  if(cur->process_error != 1)
+  {
+    
+    
+  }
+*/
   //printf("%s: exit(%d)\n", thread_name(), status);
-
-
 
   if(status != -1)
   {
+    //process_map_remove(process_map_find(thread_tid()));
+
     struct map * file_map = &thread_current()->File_Map;
+    struct file_list * temp_ptr = file_map->last_entry_pointer;
   
     if(file_map->elem_counter > 1)
     {
       for(int i = file_map->elem_counter; i > 2; i--)
       {
-        file_close(map_find(file_map, i));
+        file_close(temp_ptr->value);
+        temp_ptr = temp_ptr->previous;
       }
     }
 
@@ -370,10 +366,6 @@ process_cleanup (void)
       pagedir_destroy (pd);
     }
   debug("%s#%d: process_cleanup() DONE with status %d\n", cur->name, cur->tid, status);
-
-
-
-
 
 }
 

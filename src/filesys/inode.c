@@ -12,6 +12,8 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
+static struct lock inode_lock;
+
 /* On-disk inode.
    Must be exactly DISK_SECTOR_SIZE bytes long. */
 struct inode_disk
@@ -66,7 +68,7 @@ byte_to_sector (const struct inode *inode, off_t pos)
 /* List of open inodes, so that opening a single inode twice
    returns the same `struct inode'. */
 static struct list open_inodes;
-static struct lock inode_lock;
+
 
 /* Initializes the inode module. */
 void
@@ -235,9 +237,11 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
   
-/*
-  //lock_acquire(&inode->read_write_lock);
+
+  lock_acquire(&inode->read_write_lock);
+  /*
   //check if writing
+  lock_acquire(&inode->read_write_lock);
   if(inode->writing)
   {
     sema_down(&inode->writing_sema);
@@ -306,6 +310,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
     lock_release(&inode->read_write_lock);
   }
 */
+  lock_release(&inode->read_write_lock);
   return bytes_read;
 }
 
@@ -321,6 +326,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
+  
+  lock_acquire(&inode->read_write_lock);
   /*
   //printf("### before synch segment \n");
   inode->writing = true;
@@ -386,6 +393,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   inode->writing = false;
   sema_up(&inode->writing_sema);
 */
+  lock_release(&inode->read_write_lock);
   return bytes_written;
 }
 

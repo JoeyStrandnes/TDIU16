@@ -98,6 +98,7 @@ struct thread
     struct process_map Process_Map;
 
     /* YES! You may want to add stuff. But make note of point 2 above. */
+   int process_error;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

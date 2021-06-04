@@ -83,8 +83,10 @@ int main(int argc, char* argv[])
         printf("ERROR: Aborting test. Some execution(s) failed\n");
         return j+1;
       }
-      wait(pid[i]);      
+      wait(pid[i]);
+      plist();      
     }
   }
+  
   return 0;
 }

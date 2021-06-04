@@ -46,6 +46,7 @@ typedef int key_t;
    bool is_active;
    bool is_waited_upon;
    struct semaphore wait_lock;
+   struct lock synch_lock;
    struct process_list* previous;
    struct process_list* next;
  };
@@ -57,6 +58,7 @@ typedef int key_t;
    struct process_list* last_entry_pointer;
    struct lock list_lock;
    int elem_counter;
+   int ID_counter;
  };
 
 
@@ -83,5 +85,7 @@ int get_wait_status(value_t2 process_id);
 int use_wait_lock(value_t2 process_id);
 
 bool is_child_process(value_t2 child_id);
+
+int unlock_wait_lock(value_t2 process_id);
 
 #endif
