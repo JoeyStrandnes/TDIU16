@@ -17,7 +17,7 @@ int main(void)
   
   //debug("Reader running\n");
   messages = open("messages");
-  debug("READER: message id: %d \n", messages);
+  //debug("READER: message id: %d \n", messages);
   
   for (i = 0; i < TIMES; ++i)
   {

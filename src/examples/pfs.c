@@ -29,6 +29,8 @@ int main(void)
   {
     wait(pid[i]);
   }
+  
+  /*
   //debug("Process List: \n");
   debug("OPENING FILE1 \n");
   int fd = open("file.1");
@@ -49,6 +51,6 @@ int main(void)
   close(fd2);
   
   //plist();
-
+  */
   exit(0);
 }

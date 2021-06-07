@@ -44,9 +44,11 @@ struct inode
 
     struct lock read_write_lock;
     bool writing;
-    int read_cnt;
-    struct semaphore writing_sema;
-    struct semaphore reading_sema;
+    int active_read_cnt;
+    int readers_waiting;
+    struct lock writers_lock;
+    struct semaphore writers_sema;
+    struct semaphore readers_sema;
 
   };
 
@@ -155,12 +157,16 @@ inode_open (disk_sector_t sector)
   /* Initialize. */
   inode->sector = sector;
   inode->open_cnt = 1;
+  inode->readers_waiting = 0;
+  inode->active_read_cnt = 0;
+  inode->readers_waiting = 0;
   inode->removed = false;
   inode->writing = false;
 
-  sema_init(&inode->writing_sema,0);
-  sema_init(&inode->reading_sema,0);
+  sema_init(&inode->writers_sema,0);
+  sema_init(&inode->readers_sema,0);
   lock_init(&inode->read_write_lock);
+  lock_init(&inode->writers_lock);
   
   disk_read (filesys_disk, inode->sector, &inode->data);
   lock_release(&inode_lock);
@@ -237,27 +243,26 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
   
+  //debug("read before first lock \n");
 
-  //lock_acquire(&inode->read_write_lock);
-  /*
-  //check if writing
+  //check if writing is true;
   lock_acquire(&inode->read_write_lock);
   if(inode->writing)
   {
-    sema_down(&inode->writing_sema);
-  }
-  //lock_release(&inode->read_write_lock);
-  
-  if(inode->read_cnt > 1)
-  {
-    inode->read_cnt++;
+    inode->readers_waiting++;
+    lock_release(&inode->read_write_lock);
+    sema_down(&inode->readers_sema);
+    lock_acquire(&inode->read_write_lock);
+    inode->active_read_cnt++;
+    lock_release(&inode->read_write_lock);  
   }
   else
   {
-    inode->read_cnt++;
-    lock_acquire(&inode->read_write_lock);
+    inode->active_read_cnt++;
+    lock_release(&inode->read_write_lock);
   }
-*/
+
+
   while (size > 0) 
     {
       /* Disk sector to read, starting byte offset within sector. */
@@ -299,18 +304,15 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       bytes_read += chunk_size;
     }
   free (bounce);
-/*
-  if(inode->read_cnt > 1)
+
+  lock_acquire(&inode->read_write_lock);
+  inode->active_read_cnt--;
+  if(inode->active_read_cnt == 0)
   {
-    inode->read_cnt--;
+    sema_up(&inode->writers_sema);
   }
-  else
-  {
-    inode->read_cnt--;
-    lock_release(&inode->read_write_lock);
-  }
-*/
-  //lock_release(&inode->read_write_lock);
+  lock_release(&inode->read_write_lock);
+
   return bytes_read;
 }
 
@@ -327,19 +329,28 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
   
-  //lock_acquire(&inode->read_write_lock);
-  /*
-  //printf("### before synch segment \n");
-  inode->writing = true;
-  if(inode->read_cnt > 0)
+  //debug("write before first lock \n");
+
+  lock_acquire(&inode->writers_lock);
+
+  //debug("write after first lock\n");
+
+  lock_acquire(&inode->read_write_lock);
+  if(inode->active_read_cnt > 0)
   {
-    lock_acquire(&inode->read_write_lock);
+    lock_release(&inode->read_write_lock);
+    //debug("write before sema: active read count: %d\n", inode->active_read_cnt);
+    sema_down(&inode->writers_sema);
   }
-  if(inode->read_cnt = 0)
+  else
   {
     lock_release(&inode->read_write_lock);
   }
-*/
+
+  lock_acquire(&inode->read_write_lock);
+  inode->writing = true;
+  lock_release(&inode->read_write_lock);
+
   while (size > 0) 
     {
       /* Sector to write, starting byte offset within sector. */
@@ -388,12 +399,17 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       bytes_written += chunk_size;
     }
   free (bounce);
-  /*
-  //printf("### WRITE DONE: written: %d \n", bytes_written);
+
+  lock_acquire(&inode->read_write_lock);
   inode->writing = false;
-  sema_up(&inode->writing_sema);
-*/
-  //lock_release(&inode->read_write_lock);
+  for(int i = 0;i < inode->readers_waiting;i++)
+  {
+    sema_up(&inode->readers_sema);
+  }
+  inode->readers_waiting = 0;
+  lock_release(&inode->read_write_lock);
+
+  lock_release(&inode->writers_lock);
   return bytes_written;
 }
 
