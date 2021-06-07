@@ -66,7 +66,10 @@ static void sys_exit(int status)
 static int sys_write(int fd, char *buffer, unsigned size)
 {
 
- 
+  if(buffer[0] == 'c' && buffer[1] == 'o')
+  {
+    //debug("thread: %s#%d, filewrite: %4s \n", thread_name(), thread_tid(), buffer);
+  }
 
 
   if(fd == STDOUT_FILENO) // Till skärmen
@@ -84,8 +87,22 @@ static int sys_write(int fd, char *buffer, unsigned size)
     struct file* file_ptr = map_find(&(thread_current()->File_Map), fd);
     if(file_ptr == NULL)
     {
+      debug("file %d not found in map\n", fd);
+
+      struct map * temp_map = &thread_current()->File_Map;
+      struct file_list * temp_ptr = temp_map->first_entry_pointer;
+      debug("Elements in map: %d\n", temp_map->elem_counter);
+
+      while(temp_ptr != NULL)
+      {
+        debug("File Descriptor: %d\n", temp_ptr->key);
+        temp_ptr = temp_ptr->next;
+      }
+
+
       return -1;
     }
+    //debug("WRITE: File_Ptr: %u\n", file_ptr);
     int bytes_written = file_write(file_ptr, buffer, size);
     //debug("thread: %s #%d STRING: %s \n", thread_name(), thread_tid(), buffer);
     //debug("System Call Write\n");
@@ -138,6 +155,7 @@ static int sys_read(int fd, char *buffer, unsigned size)
     {
       return -1;
     }
+    //debug("READ: File_Ptr: %u\n", file_ptr);
     //debug("System Call Read\n");
     return file_read(file_ptr, buffer, size);
 
@@ -154,6 +172,8 @@ static int sys_open(const char *file)
   if(file_ptr == NULL){
       return -1;
   }
+
+  //debug("OPEN: File_Ptr: %u\n", file_ptr);
 
   int temp =  map_insert(&(thread_current()->File_Map), file_ptr);
 

@@ -15,8 +15,9 @@ int main(void)
   int bytes, i, j, inconsistency;
   int id, messages;
   
-  debug("Reader running\n");
+  //debug("Reader running\n");
   messages = open("messages");
+  debug("READER: message id: %d \n", messages);
   
   for (i = 0; i < TIMES; ++i)
   {
@@ -43,7 +44,9 @@ int main(void)
     }
     if (!inconsistency)
     {
-      write(messages, "cool\n", 5);
+      //debug("coool \n");
+      bytes = write(messages, "cool\n", 5);
+      //debug("Bytes written to messages: %d\n", bytes);
     }
   }
   close(messages);

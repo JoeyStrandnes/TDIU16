@@ -56,42 +56,32 @@ key_t map_insert(struct map* object_pointer, value_t val)
 
 value_t map_find(struct map* object_pointer, key_t k)
 {
-  //lock_acquire(&object_pointer->map_lock);
+  lock_acquire(&object_pointer->map_lock);
   if(k > object_pointer->ID_counter ||  k < 2)
   {
     //PANIC("Key not found");
     //bad
-    //printf("\n key not valid or found \n");
-    //lock_release(&object_pointer->map_lock);
+    //debug("key not valid or found \n");
+    lock_release(&object_pointer->map_lock);
     return NULL; //NULL
   }
   //printf("### K: %d Elem Counter: %d\n", k, object_pointer->elem_counter);
   //Find data
-  struct file_list* temp_ptr = object_pointer->first_entry_pointer;
+  struct file_list* temp_ptr = object_pointer->first_entry_pointer->next;
   while(temp_ptr != NULL)
   {
     //printf("temp_ptr->key: %d \n", temp_ptr->key);
     if(temp_ptr->key == k)
     {
-      break;
+      //debug("FOUND KEY %d \n", k);
+      lock_release(&object_pointer->map_lock);
+      return temp_ptr->value;
     }
 
     //printf("temp_ptr: %u Last entry pointer: %u \n", temp_ptr, object_pointer->last_entry_pointer);
-    if(temp_ptr != object_pointer->last_entry_pointer && temp_ptr != NULL)
-    {
-      temp_ptr = temp_ptr->next;
-    }
-    else
-    {
-      temp_ptr = NULL;
-    }
+    temp_ptr = temp_ptr->next;
   }
-  //lock_release(&object_pointer->map_lock);
-  
-  if(temp_ptr != NULL)
-  {
-    return temp_ptr->value;
-  }
+  lock_release(&object_pointer->map_lock);
   return NULL;
 }
 
@@ -137,8 +127,8 @@ value_t map_remove(struct map* object_pointer, key_t k)
   else if(object_pointer->elem_counter == 2)
   {
     temp_previous_ptr->previous = object_pointer->first_entry_pointer;
-    object_pointer->last_entry_pointer = object_pointer->first_entry_pointer;
-    object_pointer->first_entry_pointer->next = NULL;
+    object_pointer->last_entry_pointer = object_pointer->first_entry_pointer->next;
+    object_pointer->first_entry_pointer->next->next = NULL;
   }
   else if(temp_ptr->next == NULL)
   {

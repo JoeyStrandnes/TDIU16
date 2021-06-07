@@ -9,6 +9,7 @@
 */
   
 #include "syscall.h"
+#include "pfs.h"
 
 int main(void)
 {
@@ -28,21 +29,26 @@ int main(void)
   {
     wait(pid[i]);
   }
-  debug("Process List: \n");
-  /*
+  //debug("Process List: \n");
+  debug("OPENING FILE1 \n");
   int fd = open("file.1");
+  int fd2 = open("messages");
 
-  char* buff;
+  char buff[BIG];
   int bytes_read;
 
-  bytes_read = read(fd, &buff, 50000);
+  bytes_read = read(fd, buff, BIG);
 
-  debug("file.1 : %s", buff);
+  //debug("file.1 : %s \n", buff);
 
+  bytes_read = read(fd2, buff, BIG);
+
+  //debug("messages : %s \n", buff);
 
   close(fd);
-  */
-  plist();
+  close(fd2);
+  
+  //plist();
 
   exit(0);
 }

@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     exit(1);
   
 
-  debug("Writer running\n");
+  //debug("Writer running\n");
   start = argv[1][0];
   end   = argv[2][0];
   
