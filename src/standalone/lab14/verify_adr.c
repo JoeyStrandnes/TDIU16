@@ -18,13 +18,32 @@
  *
  *  gcc -Wall -Wextra -std=gnu99 -pedantic -m32 -g pagedir.o verify_adr.c
  */
-#error Read comment above and then remove this line.
+//#error Read comment above and then remove this line.
 
 /* Verify all addresses from and including 'start' up to but excluding
  * (start+length). */
 bool verify_fix_length(void* start, int length)
 {
   // ADD YOUR CODE HERE
+
+  //printf("#DEBUG: start: %u length: %d\n", start, length);
+
+  void * iterator = pg_round_down(start);
+  //printf("#DEBUG: iterator: %u\n", iterator);
+  void * end = (void*)((unsigned) start + length);
+  //printf("#DEBUG: end: %u\n", end);
+
+  while(iterator < end)
+  {
+    //printf("#DEBUG: iterator inside loop: %u\n", iterator);
+    if(pagedir_get_page(thread_current()->pagedir, iterator) == NULL)
+    {
+      return false;
+    }
+
+    iterator = (void*) ((unsigned)iterator + PGSIZE);
+  }
+  return true;
 }
 
 /* Verify all addresses from and including 'start' up to and including
@@ -34,6 +53,38 @@ bool verify_fix_length(void* start, int length)
 bool verify_variable_length(char* start)
 {
   // ADD YOUR CODE HERE
+
+  char* iterator = start;
+  int chars_to_read; 
+
+  //printf("#DEBUG: iterator: %u \n", start);
+
+  while(pagedir_get_page(thread_current()->pagedir, iterator) != NULL)
+  {
+    //printf("#DEBUG: iterator in loop: %u \n", iterator);
+    chars_to_read = PGSIZE - ((int)iterator % PGSIZE);
+    //printf("#DEBUG: chars_to_read: %u \n", chars_to_read);
+    for(int i = 0;i < chars_to_read;i++)
+    {
+      //printf("#DEBUG: iterator + i: %u \n", iterator + i);
+      if(is_end_of_string(iterator + i))
+      {
+        return true;
+      }
+    }
+    iterator = (char*) iterator + chars_to_read;
+    
+
+    /*
+    if(is_end_of_string(iterator))
+    {
+      return true;
+    }
+    
+    iterator++;
+    */
+  }
+  return false;
 }
 
 /* Definition of test cases. */
@@ -75,7 +126,9 @@ int main(int argc, char* argv[])
     evaluate(result);
     end_evaluate_algorithm();
   }
-    
+  
+  printf("#DEBUG: after fix length test\n");
+
   /* Test the algorithm with a C-string (start address with
    * terminating null-character).
    */
