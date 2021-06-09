@@ -72,7 +72,7 @@ void process_print_list()
   while(temp_list != NULL)
   {
     lock_acquire(&temp_list->synch_lock);
-    printf("#Key: %d #Process ID: %d #Parent ID: %d #Exit Status: %d \n", temp_list->key, temp_list->Process_ID, temp_list->Parent_ID, temp_list->Exit_Status);
+    debug("PLIST: #Key: %d #Process ID: %d #Parent ID: %d #Exit Status: %d \n", temp_list->key, temp_list->Process_ID, temp_list->Parent_ID, temp_list->Exit_Status);
     lock_release(&temp_list->synch_lock);
     temp_list = temp_list->next;
   }

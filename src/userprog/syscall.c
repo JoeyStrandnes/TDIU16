@@ -21,6 +21,11 @@
 
 
 static void syscall_handler (struct intr_frame *);
+static bool verify_variable_length(char* start);
+static bool verify_fix_length(void* start, int length);
+static void verify_esp(int32_t* esp);
+
+
 
 void
 syscall_init (void)
@@ -48,9 +53,12 @@ const int argc[] = {
 };
 
 
+
+
+
 static void sys_halt(void)
 {
-  printf("System Call Halt\n");
+  //printf("System Call Halt\n");
   power_off();
 }
 
@@ -66,11 +74,15 @@ static void sys_exit(int status)
 static int sys_write(int fd, char *buffer, unsigned size)
 {
 
-  if(buffer[0] == 'c' && buffer[1] == 'o')
+  if(!verify_fix_length(buffer, size))
   {
-    //debug("thread: %s#%d, filewrite: %4s \n", thread_name(), thread_tid(), buffer);
+    sys_exit(-1);
   }
 
+  if(!verify_variable_length(buffer))
+  {
+    sys_exit(-1);
+  }
 
   if(fd == STDOUT_FILENO) // Till skärmen
   {
@@ -116,6 +128,16 @@ static int sys_read(int fd, char *buffer, unsigned size)
 {
 
   //debug("System Call read: %d\n", fd);
+
+  if(!verify_fix_length(buffer, size))
+  {
+    sys_exit(-1);
+  }
+
+  if(!verify_variable_length(buffer))
+  {
+    sys_exit(-1);
+  }
 
   if(fd == STDOUT_FILENO) // Till skärmen
   {
@@ -167,6 +189,11 @@ static int sys_read(int fd, char *buffer, unsigned size)
 static int sys_open(const char *file)
 {
 
+  if(!verify_variable_length((char*)file))
+  {
+    sys_exit(-1);
+  }
+
   struct file* file_ptr = filesys_open(file);
 
   if(file_ptr == NULL){
@@ -184,11 +211,13 @@ static int sys_open(const char *file)
 
 static bool sys_create(const char *file, unsigned initial_size)
 {
-
+  
+  if(!verify_variable_length((char*)file))
+  {
+    sys_exit(-1);
+  }
 
   return filesys_create(file, initial_size);
-
-
 }
 
 static void sys_close(int fd)
@@ -208,6 +237,11 @@ static void sys_close(int fd)
 
 static bool sys_remove(const char *file)
 {
+
+  if(!verify_variable_length((char*)file))
+  {
+    sys_exit(-1);
+  }
 
   return filesys_remove(file);
 
@@ -264,6 +298,10 @@ void sys_sleep(int millis)
 
 tid_t sys_exec(const char* command_line)
 {
+  if(!verify_variable_length((char*)command_line))
+  {
+    return -1;
+  }
   return process_execute(command_line);
 }
 
@@ -290,6 +328,9 @@ static void syscall_handler (struct intr_frame *f)
   printf ("Stack top + 4: %d\n", esp[4]);
   printf ("Stack top + 5: %d\n", esp[5]);
 */
+
+  verify_esp(esp);
+
 
   switch ( esp[0] /* retrive syscall number */ )
   {
@@ -372,12 +413,86 @@ static void syscall_handler (struct intr_frame *f)
 
     default:
     {
-      printf ("Executed an unknown system call!\n");
+      printf("Executed an unknown system call!\n");
 
-      printf ("Stack top + 0: %d\n", esp[0]);
-      printf ("Stack top + 1: %d\n", esp[1]);
+      printf("Stack top + 0: %d\n", esp[0]);
+      printf("Stack top + 1: %d\n", esp[1]);
 
       thread_exit ();
     }
+  }
+}
+
+
+
+static bool verify_fix_length(void* start, int length)
+{
+  // ADD YOUR CODE HERE
+
+  //printf("#DEBUG: start: %u length: %d\n", start, length);
+
+  void * iterator = pg_round_down(start);
+  //printf("#DEBUG: iterator: %u\n", iterator);
+  void * end = (void*)((unsigned) start + length);
+  //printf("#DEBUG: end: %u\n", end);
+
+  while(iterator < end)
+  {
+    //printf("#DEBUG: iterator inside loop: %u\n", iterator);
+    if(pagedir_get_page(thread_current()->pagedir, iterator) == NULL)
+    {
+      return false;
+    }
+
+    iterator = (void*) ((unsigned)iterator + PGSIZE);
+  }
+  return true;
+}
+
+
+static bool verify_variable_length(char* start)
+{
+  // ADD YOUR CODE HERE
+
+  char* iterator = start;
+  int chars_to_read; 
+
+  //printf("#DEBUG: iterator: %u \n", start);
+
+  while(pagedir_get_page(thread_current()->pagedir, iterator) != NULL)
+  {
+    //printf("#DEBUG: iterator in loop: %u \n", iterator);
+    chars_to_read = PGSIZE - ((int)iterator % PGSIZE);
+    //printf("#DEBUG: chars_to_read: %u \n", chars_to_read);
+    for(int i = 0;i < chars_to_read;i++)
+    {
+      //printf("#DEBUG: iterator + i: %u \n", iterator + i);
+      if(*(iterator + i) == '\0')
+      {
+        return true;
+      }
+    }
+    iterator = (char*) iterator + chars_to_read;
+    
+
+    /*
+    if(is_end_of_string(iterator))
+    {
+      return true;
+    }
+    
+    iterator++;
+    */
+  }
+  return false;
+}
+
+
+
+static void verify_esp(int32_t* esp)
+{
+  if(esp[0] >= SYS_NUMBER_OF_CALLS)
+  {
+    sys_exit(-1); //the stack pointer is not correct
   }
 }
